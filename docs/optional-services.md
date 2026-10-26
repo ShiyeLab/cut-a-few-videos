@@ -2,7 +2,7 @@
 
 主 Agent 默认推荐 **DeepSeek V4.1 Flash**，在支持它的 Agent 宿主中选择；使用 Codex、Claude Code、DSH 等工具时，也可以直接用各自支持的模型。宿主需要能读写项目文件、执行命令和检查媒体。主模型负责理解材料和组织制作，仓库里的脚本负责具体处理与合成。
 
-生图默认 Seedream 5.0 Pro，环境视频默认 MiniMax H3，配音默认豆包语音合成 2.0。**每个环节都能独立更换**，已有本地素材直接复用。所选服务、模型与生成数量写入本条 `brief.md`。
+生图默认 Seedream 5.0 Pro，环境视频默认 MiniMax H3，配音默认豆包语音合成 2.0 流式语气方案。**每个环节都能独立更换**，已有本地素材直接复用。所选服务、模型与生成数量写入本条 `brief.md`。
 
 ## 更换服务后怎样继续
 
@@ -49,7 +49,7 @@ python tools/seedream_image.py --prompt projects/my-video/poster-prompt.txt \
 
 ## 豆包配音
 
-使用 `VOLCENGINE_TTS_API_KEY`。工具使用豆包语音合成 2.0、资源 `seed-tts-2.0`，音色由 `--speaker` 选择。示例音色应按内容替换和试听。
+使用 `VOLCENGINE_TTS_API_KEY`。默认用 `doubao_tts_stream.py` 的单向流式语气方案，资源为 `seed-tts-2.0`；音色由必填的 `--speaker` 明确选择。示例音色应按内容替换和试听，字幕分条与换行不决定朗读停顿。
 
 短试听和完整流式配音的演绎要求保存在独立文件：
 
@@ -85,7 +85,7 @@ python tools/doubao_tts.py --script projects/my-video/script.txt \
 
 使用 `MINIMAX_API_KEY`，站点为 `https://api.minimaxi.com`，模型为 `MiniMax-H3`。配置须与该站点匹配。
 
-Agent 复制并修改[空镜模板](../templates/ai-video.json)，保存到本条目录，用新的 `slug` 标识每个镜头。提示词描述无人、无手、无书、无文字的环境画面。
+Agent 复制并修改[空镜模板](../templates/ai-video.json)，保存到本条目录，用新的 `slug` 标识每个镜头。按口播与前后承接设计运动；新环境镜头默认无手、无书、无文字。模板里的窗帘镜头不安排人物；其他情绪镜头是否出现人物按内容决定。
 
 ```sh
 python tools/minimax_video.py --spec projects/my-video/ai-video.json --out projects/my-video/ai

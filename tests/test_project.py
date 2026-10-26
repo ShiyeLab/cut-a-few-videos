@@ -63,6 +63,33 @@ class ProjectTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "唯一定位"):
                 B.prepare(project, folder, False, False)
 
+    def test_poster_hides_card_and_preserves_custom_shadow(self):
+        with tempfile.TemporaryDirectory() as temp:
+            folder = Path(temp)
+            project = self.setup_project(folder)
+            project["band_art"] = str(folder / "image.png")
+            layout_path = Path(project["layout"])
+            cfg = json.loads(layout_path.read_text())
+            # 白色细描边仍需深色投影；用户已选的另一套投影应保留。
+            cfg["fonts"]["title"]["stroke_color"] = "#FFFFFF"
+            custom = {"dx": 1, "dy": 4, "blur": 8, "opacity": 0.4, "color": "#234567"}
+            cfg["fonts"]["quote"]["shadow"] = custom
+            layout_path.write_text(json.dumps(cfg))
+            work = folder / "v1"
+            work.mkdir()
+            B.prepare(project, work, False, False)
+            output = json.loads((work / "layout.json").read_text())
+            report = json.loads((work / "layout_report.json").read_text())
+            self.assertTrue(output["bands"]["card"]["hidden"])
+            self.assertEqual(output["text_slots"]["title"]["band"], "top")
+            for name in ("top", "bottom"):
+                self.assertEqual(output["bands"][name]["image"], project["band_art"])
+                self.assertEqual(output["bands"][name]["image_anchor"], name)
+            color = output["fonts"]["title"]["shadow"]["color"].lstrip("#")
+            self.assertLess(max(int(color[i:i + 2], 16) for i in (0, 2, 4)), 128)
+            self.assertEqual(output["fonts"]["quote"]["shadow"], custom)
+            self.assertEqual(report["overflow"], [])
+
     def test_no_voice_preserves_duration_and_rejects_truncation(self):
         with tempfile.TemporaryDirectory() as temp:
             folder = Path(temp)

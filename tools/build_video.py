@@ -70,8 +70,8 @@ def prepare(project: dict, work: Path, no_voice: bool, no_music: bool) -> argpar
         cfg["bands"]["bottom"]["text_box"] = {"x": 70, "y": 1580, "w": 940, "h": 170}
         for key in ("title", "quote"):
             cfg["fonts"][key]["stroke_width"] = 3
-            cfg["fonts"][key]["shadow"] = {"dx": 0, "dy": 3, "blur": 7,
-                                           "opacity": 0.5, "color": cfg["fonts"][key]["stroke_color"]}
+            cfg["fonts"][key].setdefault("shadow", {"dx": 0, "dy": 3, "blur": 7,
+                                                   "opacity": 0.5, "color": "#18252B"})
     cfg["editing"] = {"transition_seconds": transition}
     subs = []
     for i, cue in enumerate(timeline):
