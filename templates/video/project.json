@@ -1,0 +1,14 @@
+{
+  "title": "填写本条标题",
+  "footer": "填写底部文字",
+  "layout": "projects/my-video/layout.json",
+  "band_art": "projects/my-video/assets/poster.jpg",
+  "script": "projects/my-video/script.txt",
+  "timeline": "projects/my-video/voice-v1/timeline.json",
+  "scenes": "projects/my-video/scenes.json",
+  "voice": "projects/my-video/voice-v1/voice.mp3",
+  "music": null,
+  "music_gain": -14,
+  "tail": 1.2,
+  "transition": 0.266666667
+}

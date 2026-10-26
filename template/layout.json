@@ -1,0 +1,116 @@
+{
+  "_comment": "1080×1920 通用布局；配色、中文字体与海报底图按本条视频填写。",
+  "version": "base",
+  "canvas": {
+    "w": 1080,
+    "h": 1920,
+    "fps": 30
+  },
+  "theme": {
+    "band": "#D8E9EB",
+    "band_deep": "#C5DEE2",
+    "card": "#F7F3E9",
+    "ink": "#355B63",
+    "paper": "#F7F3E9"
+  },
+  "bands": {
+    "top": {
+      "x": 0,
+      "y": 0,
+      "w": 1080,
+      "h": 380,
+      "fill": "#D8E9EB"
+    },
+    "card": {
+      "x": 56,
+      "y": 70,
+      "w": 968,
+      "h": 280,
+      "radius": 26,
+      "fill": "#F7F3E9"
+    },
+    "center": {
+      "x": 0,
+      "y": 380,
+      "w": 1080,
+      "h": 1150,
+      "radius": 0
+    },
+    "subtitle": {
+      "x": 44,
+      "y": 1350,
+      "w": 992,
+      "h": 150
+    },
+    "bottom": {
+      "x": 0,
+      "y": 1530,
+      "w": 1080,
+      "h": 390,
+      "fill": "#D8E9EB",
+      "text_box": {
+        "x": 70,
+        "y": 1568,
+        "w": 940,
+        "h": 180
+      }
+    }
+  },
+  "text_slots": {
+    "title": {
+      "band": "card",
+      "font": "title"
+    },
+    "quote": {
+      "band": "bottom",
+      "font": "quote"
+    }
+  },
+  "safe_area": {
+    "bottom": 1760,
+    "note": "1760 以下留给平台互动栏"
+  },
+  "fonts": {
+    "title": {
+      "path": "local/fonts/SourceHanSerifSC-Heavy.otf",
+      "size": 62,
+      "min_size": 42,
+      "max_lines": 2,
+      "line_gap": 12,
+      "color": "#2B4F57",
+      "stroke_width": 3,
+      "stroke_color": "#FFFFFF"
+    },
+    "quote": {
+      "path": "local/fonts/SourceHanSerifSC-Heavy.otf",
+      "size": 54,
+      "min_size": 38,
+      "max_lines": 2,
+      "line_gap": 12,
+      "color": "#2B4F57",
+      "stroke_width": 3,
+      "stroke_color": "#FFFFFF"
+    },
+    "subtitle": {
+      "path": "local/fonts/SourceHanSerifSC-Heavy.otf",
+      "size": 44,
+      "min_size": 34,
+      "max_lines": 2,
+      "line_gap": 10,
+      "color": "#FFFFFF",
+      "stroke_width": 7,
+      "stroke_color": "#000000"
+    }
+  },
+  "audio": {
+    "lufs": -16,
+    "sample_rate": 48000
+  },
+  "encode": {
+    "vcodec": "libx264",
+    "crf": 18,
+    "preset": "medium",
+    "acodec": "aac",
+    "abitrate": "192k"
+  }
+}

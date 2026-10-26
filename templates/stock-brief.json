@@ -1,0 +1,10 @@
+{
+  "shots": [
+    {
+      "type": "stock",
+      "need": "quiet-window",
+      "query": "sunlight curtain room",
+      "requirement": "光线穿过窗帘，有平稳连续的微小动作；无文字、书本或明显产品。查看整段，核对中央裁切后主体与前后切镜。"
+    }
+  ]
+}

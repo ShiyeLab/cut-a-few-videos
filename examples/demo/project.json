@@ -1,0 +1,14 @@
+{
+  "title": "CUT A FEW\nVIDEOS",
+  "footer": "Your footage. Your story.",
+  "layout": "examples/demo/generated/layout.json",
+  "band_art": "examples/demo/generated/poster.png",
+  "script": "examples/demo/script.txt",
+  "timeline": "examples/demo/timeline.json",
+  "scenes": "examples/demo/scenes.json",
+  "voice": null,
+  "music": "examples/demo/generated/music.wav",
+  "music_gain": -5,
+  "duration": 8,
+  "transition": 0.266666667
+}

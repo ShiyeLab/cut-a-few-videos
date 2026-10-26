@@ -1,0 +1,8 @@
+[
+  {"anchor": null, "asset": "examples/demo/generated/window.png", "fit": "cover", "zoom": 0.035,
+   "reason": "观察网格和圆形的缓慢推近"},
+  {"anchor": "Add a moving scene", "asset": "examples/demo/generated/motion.mp4", "in": 0.2, "fit": "cover",
+   "reason": "用实际视频验证选段和中央叠化"},
+  {"anchor": "Keep the ending", "asset": "examples/demo/generated/window.png", "fit": "blur", "zoom": 0.025,
+   "reason": "回到起始画面，末句字幕保持至片尾"}
+]
