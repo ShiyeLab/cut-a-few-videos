@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""读取单条视频配置，沿用已有排版和合成工具；不调用外部服务。"""
+"""读取 Agent 准备的单条配置，排版并合成；输入可来自任意服务。"""
 from __future__ import annotations
 
 import argparse

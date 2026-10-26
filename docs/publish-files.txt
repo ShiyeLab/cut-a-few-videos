@@ -8,7 +8,6 @@ docs/getting-started.md
 docs/工程说明.md
 docs/optional-services.md
 docs/validation.md
-docs/release-check.json
 docs/publish-scope.md
 docs/publish-files.txt
 methods/制作流程.md
@@ -17,6 +16,7 @@ templates/ai-video.json
 templates/poster-prompt.txt
 templates/stock-brief.json
 templates/video/brief.md
+templates/video/inventory.md
 templates/video/direction.txt
 templates/video/project.json
 templates/video/scenes.json
@@ -28,7 +28,6 @@ examples/demo/project.json
 examples/demo/scenes.json
 examples/demo/script.txt
 examples/demo/timeline.json
-examples/cases/README.md
 projects/README.md
 tools/build_video.py
 tools/check_credentials.py
@@ -38,7 +37,9 @@ tools/doubao_tts.py
 tools/doubao_tts_stream.py
 tools/layout.py
 tools/minimax_video.py
+tools/seedream_image.py
 tools/stock_search.py
 tools/test_video_fixes.py
 tools/voice_stats.py
 tests/test_project.py
+tests/test_image.py

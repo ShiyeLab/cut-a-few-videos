@@ -1,3 +1,2 @@
-# 当前成片使用 Python 3.12.14 / Pillow 12.3.0。
-# FFmpeg 与 ffprobe 是独立命令，安装方法见 docs/工程说明.md。
+# Python 3.12；FFmpeg 与 ffprobe 需单独安装。
 Pillow==12.3.0

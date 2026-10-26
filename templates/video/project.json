@@ -2,7 +2,7 @@
   "title": "填写本条标题",
   "footer": "填写底部文字",
   "layout": "projects/my-video/layout.json",
-  "band_art": "projects/my-video/assets/poster.jpg",
+  "band_art": "projects/my-video/poster-v1/poster.png",
   "script": "projects/my-video/script.txt",
   "timeline": "projects/my-video/voice-v1/timeline.json",
   "scenes": "projects/my-video/scenes.json",
