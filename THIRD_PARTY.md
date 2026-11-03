@@ -16,7 +16,6 @@
 
 | 项目与作者 | 参考范围 | 许可证与接入情况 |
 | --- | --- | --- |
-| [MoneyPrinterTurbo](https://github.com/harry0703/MoneyPrinterTurbo)，Harry / harry0703 与贡献者 | 自动化短视频流程、素材检索、配音、字幕与合成的功能组织；参考其项目说明和 CLI 接口 | [MIT](https://github.com/harry0703/MoneyPrinterTurbo/blob/main/LICENSE)。属于方案和接口参考，当前制作入口不调用该项目 |
 | [video-shotcraft](https://github.com/Vincentwei1021/video-shotcraft)，Vincentwei1021 与贡献者 | [剪映导出技术说明](https://github.com/Vincentwei1021/video-shotcraft/blob/main/references/jianying-export.md)：原生文本与媒体分轨、字号与坐标、Mac 草稿安装及打开后验证的方法 | [Apache-2.0](https://github.com/Vincentwei1021/video-shotcraft/blob/main/LICENSE)。属于技术文档参考，当前仓库未引入其 Remotion 渲染链、模板或音频素材 |
 
 ## 剪映草稿库的间接依赖

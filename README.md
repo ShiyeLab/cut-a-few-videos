@@ -79,6 +79,6 @@ python tools/build_video.py --project examples/demo/project.json --work projects
 
 ## 开源致谢
 
-本项目使用 [FFmpeg](https://ffmpeg.org/)、[Pillow](https://github.com/python-pillow/Pillow)、[MediaKit CLI](https://github.com/volcengine/mediakit-cli)、[pyJianYingDraft](https://github.com/GuanYixuan/pyJianYingDraft) 和 [思源宋体](https://github.com/adobe-fonts/source-han-serif)。自动化短视频流程参考 [MoneyPrinterTurbo](https://github.com/harry0703/MoneyPrinterTurbo)，剪映草稿相关技术参考 [video-shotcraft](https://github.com/Vincentwei1021/video-shotcraft) 的导出说明。感谢各项目作者与贡献者；具体使用范围、间接依赖和许可证见[署名说明](THIRD_PARTY.md)。
+本项目使用 [FFmpeg](https://ffmpeg.org/)、[Pillow](https://github.com/python-pillow/Pillow)、[MediaKit CLI](https://github.com/volcengine/mediakit-cli)、[pyJianYingDraft](https://github.com/GuanYixuan/pyJianYingDraft) 和 [思源宋体](https://github.com/adobe-fonts/source-han-serif)。剪映草稿相关技术参考 [video-shotcraft](https://github.com/Vincentwei1021/video-shotcraft) 的导出说明。感谢各项目作者与贡献者；具体使用范围、间接依赖和许可证见[署名说明](THIRD_PARTY.md)。
 
 自己的素材、声音、字体、回执与成片放在 `projects/`、`local/`，默认不进入 Git。维护者：[ShiyeLab](https://github.com/ShiyeLab)。
