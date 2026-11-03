@@ -46,13 +46,15 @@ python tools/build_video.py --project examples/demo/project.json --work projects
 
 ## Agent 准备制作输入
 
+实际视频素材先按[MediaKit 视频理解](video-understanding.md)安装 CLI、填写 `MEDIAKIT_API_KEY`，由 Agent 提交分析并保存结果。离线教学例不调用服务。主 Agent 使用文字分析进行策划和编排，无需自身具备视频视觉能力。
+
 ```sh
 mkdir -p projects/my-video
 cp templates/video/* projects/my-video/
 cp template/layout.json projects/my-video/layout.json
 ```
 
-Agent 按[制作流程](../methods/制作流程.md)盘点用户材料，填写 `inventory.md`、`brief.md` 与纯口播 `script.txt`，明确是否配音、配乐和补画面。把真实素材放到 `projects/my-video/assets/`，在 `sources.json` 里记录本地文件、来源、用途与已看过的片段。把音频及与它匹配的真实时间轴放到 `projects/my-video/voice-v1/`。默认 API 与替换方法见[服务选择与替换](optional-services.md)；使用自己录音时，根据实际录音制作相同格式的时间轴。
+Agent 按[制作流程](../methods/制作流程.md)盘点用户材料，先取得完成的视频分析，再填写 `inventory.md`、`brief.md` 与纯口播 `script.txt`，明确是否配音、配乐和补画面。把真实素材放到 `projects/my-video/assets/`，在 `sources.json` 里记录本地文件、来源、用途、理解结果路径与选段依据。把音频及与它匹配的真实时间轴放到 `projects/my-video/voice-v1/`。默认 API 与替换方法见[服务选择与替换](optional-services.md)；使用自己录音时，根据实际录音制作相同格式的时间轴。
 
 Agent 用生图 API 生成无字海报，或复用用户提供的合适底图；使用 `band_art` 导入，上下取同一幅图，文字另排。
 

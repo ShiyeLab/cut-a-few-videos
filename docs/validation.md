@@ -15,6 +15,8 @@ python tools/build_video.py --project examples/demo/project.json --work projects
 
 `verify.json` 中 `decode_ok`、`geometry_ok`、`audio_ok`、`duration_ok` 应全部为 true。声画时长容差为 0.06 秒；全静音片保留静音轨，所以 `audio_ok` 也为 true。`layout_report.json` 的 overflow 应为空。最终字幕的结束时间应覆盖片尾。
 
+视频理解接入使用离线模拟检查任务提交、查询、结果复用、失败后不重提、输入变更及凭证隔离。另可用 `mediakit-cli video video-understand-router --schema` 与 `mediakit-cli shared query-task --schema` 核对安装版本的真实接口；这些检查不证明云端效果。实际制作须取得 completed 结果，阅读 `analysis.md`，将选段依据和不确定项写入素材清单后再编排。
+
 ## 实际看片
 
 - 通看完整视频，核对每句含义与画面，特别是出现书名、翻页、抄写和情绪转折时。

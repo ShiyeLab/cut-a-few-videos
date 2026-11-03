@@ -1,13 +1,14 @@
 # 默认服务与替换方法
 
-主 Agent 默认推荐 **DeepSeek V4.1 Flash**，在支持它的 Agent 宿主中选择；使用 Codex、Claude Code、DSH 等工具时，也可以直接用各自支持的模型。宿主需要能读写项目文件、执行命令和检查媒体。主模型负责理解材料和组织制作，仓库里的脚本负责具体处理与合成。
+主 Agent 默认推荐 **DeepSeek V4.1 Flash**，在支持它的 Agent 宿主中选择；使用 Codex、Claude Code、DSH 等工具时，也可以直接用各自支持的模型。宿主需要能读写项目文件、执行命令。主模型负责策划和组织制作，视频内容分析默认交给 MediaKit，主模型读取其结果后编排；仓库里的脚本负责调用工具、处理与合成。
 
-生图默认 Seedream 5.0 Pro，环境视频默认 MiniMax H3，配音默认豆包语音合成 2.0 流式语气方案。**每个环节都能独立更换**，已有本地素材直接复用。所选服务、模型与生成数量写入本条 `brief.md`。
+视频理解默认 MediaKit，生图默认 Seedream 5.0 Pro，环境视频默认 MiniMax H3，配音默认豆包语音合成 2.0 流式语气方案。**每个环节都能独立更换**，已有素材和有效分析直接复用。所选服务、模型、分析批次与生成数量写入本条 `brief.md`。
 
 ## 更换服务后怎样继续
 
 | 环节 | 交给合成步骤的文件 | 填写位置与检查 |
 | --- | --- | --- |
+| 视频理解 | 逐文件内容、候选源区间、选用理由、不确定项及原始分析 | 先写入 `inventory.md` 和 `sources.json`，再由主 Agent 编排 `scenes.json` |
 | 生图 | 无字海报 PNG/JPG | `project.json` 的 `band_art`；检查上下裁切、留字区域和实际内容 |
 | 生视频或视频检索 | 本地 MP4 等 FFmpeg 可读视频 | `scenes.json` 的 `asset`、`in`；检查真实动作、尺寸和源区间，给叠化留足尾段 |
 | 配音或用户录音 | MP3/WAV/M4A 等完整音频 | `project.json` 的 `voice`；听完整口播，记录对应的实际时间轴 |
@@ -29,6 +30,12 @@ python tools/check_credentials.py
 ```
 
 检查只显示变量名与 PRESENT/ABSENT，不联网。`--env` 可明确指定另一个配置文件。配置格式为 `NAME=value`。已有所需文件或只跑离线示例时，不需要 Key。
+
+## MediaKit 视频理解
+
+使用 `MEDIAKIT_API_KEY` 与官方 `mediakit-cli`，调用 `video-understand-router`，默认 `scene=editing`、`level=Quality`。完整安装、提交、任务恢复和镜头表衔接见[视频理解](video-understanding.md)。入口为 `tools/understand_video.py`；它保存真实任务号、查询结果和 `analysis.md`，供主 Agent 阅读。
+
+视频理解是素材准备的一部分。缺少配置或分析失败时不能默认让文本主模型自行理解视频；先处理配置、查询原任务或使用用户指定的其他理解服务。已有同一素材和目标的有效分析可复用。
 
 ## Seedream 贴片生图
 

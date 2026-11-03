@@ -43,3 +43,7 @@ tools/test_video_fixes.py
 tools/voice_stats.py
 tests/test_project.py
 tests/test_image.py
+docs/video-understanding.md
+tools/understand_video.py
+templates/video/understand-prompt.txt
+tests/test_understanding.py

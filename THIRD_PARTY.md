@@ -6,4 +6,6 @@
 | [FFmpeg](https://ffmpeg.org/) | 使用者安装的外部命令，用于视频、音频处理与检查 |
 | [Adobe 思源宋体](https://github.com/adobe-fonts/source-han-serif) | 可选中文字体，使用者自行取得，按其 [SIL OFL 1.1](https://github.com/adobe-fonts/source-han-serif/blob/release/LICENSE.txt) 使用 |
 
+视频理解使用 [MediaKit 官方 CLI](https://github.com/volcengine/mediakit-cli)，由使用者自行安装；CLI 代码采用 MIT 许可，云端调用按该服务的条款与计费执行。仓库只提供调用入口，不附带 CLI 二进制或账户配置。
+
 教学输入由随附程序生成几何图形、测试画面与合成音。仓库不包含字体包、真实产品素材或音乐录音。使用者加入的媒体在 `sources.json` 中记录来源、作者、用途与许可。
