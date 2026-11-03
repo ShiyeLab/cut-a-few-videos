@@ -57,6 +57,12 @@ python tools/build_video.py --project examples/demo/project.json --work projects
 
 得到 `projects/demo/v1/video.mp4`：8 秒、1080×1920、30 fps，包含匀速推近与平移、视频选段、推入与闪白转场、贴片、字幕和合成音。输入由程序生成，不需要 Key。教学例的几何底图用于离线演示；自己的视频按上面的生图流程准备贴片。
 
+## 试用可编辑剪映草稿
+
+退出剪映后运行 `python tools/jianying_smoke.py`，再启动剪映，从首页打开新出现的 `cut-smoke-…` 草稿。它包含 6 秒测试画面、独立标题、两句字幕和测试音，可在剪映中改字并导出视频；不需要真实素材或服务 Key。
+
+这是独立的兼容性测试，尚未接入正式制作入口。Mac 首页登记、仅生成文件的用法与验收步骤见[验证说明](docs/validation.md#剪映草稿测试)。
+
 ## 文档
 
 | 文档 | 用途 |
@@ -69,6 +75,10 @@ python tools/build_video.py --project examples/demo/project.json --work projects
 | [离线教学例](examples/demo/README.md) | 无需外部素材的完整运行例子 |
 | [检查与交付](docs/validation.md) | 自动检查与实际看片 |
 | [AI 执行说明](AGENTS.md) | 给制作 Agent 的工作要求 |
-| [第三方依赖](THIRD_PARTY.md) | 字体、Pillow 与 FFmpeg |
+| [开源依赖与参考](THIRD_PARTY.md) | 来源、作者、用途、许可证与技术参考 |
+
+## 开源致谢
+
+本项目使用 [FFmpeg](https://ffmpeg.org/)、[Pillow](https://github.com/python-pillow/Pillow)、[MediaKit CLI](https://github.com/volcengine/mediakit-cli)、[pyJianYingDraft](https://github.com/GuanYixuan/pyJianYingDraft) 和 [思源宋体](https://github.com/adobe-fonts/source-han-serif)。自动化短视频流程参考 [MoneyPrinterTurbo](https://github.com/harry0703/MoneyPrinterTurbo)，剪映草稿相关技术参考 [video-shotcraft](https://github.com/Vincentwei1021/video-shotcraft) 的导出说明。感谢各项目作者与贡献者；具体使用范围、间接依赖和许可证见[署名说明](THIRD_PARTY.md)。
 
 自己的素材、声音、字体、回执与成片放在 `projects/`、`local/`，默认不进入 Git。维护者：[ShiyeLab](https://github.com/ShiyeLab)。
