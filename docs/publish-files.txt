@@ -36,6 +36,7 @@ tools/doubao_preview.py
 tools/doubao_tts.py
 tools/doubao_tts_stream.py
 tools/layout.py
+tools/jianying_draft.py
 tools/jianying_smoke.py
 tools/minimax_video.py
 tools/seedream_image.py

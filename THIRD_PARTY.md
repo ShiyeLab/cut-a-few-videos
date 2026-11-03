@@ -9,11 +9,17 @@
 | [FFmpeg / ffprobe](https://ffmpeg.org/)，FFmpeg contributors | [compose.py](tools/compose.py) 等调用外部命令，完成素材探测、裁剪、运镜、转场、混音、编码和检查 | [LGPL-2.1-or-later；启用 GPL 组件时按相应 GPL 许可](https://github.com/FFmpeg/FFmpeg/blob/master/LICENSE.md)。实际许可随安装版本和编译选项确定 |
 | [Pillow](https://github.com/python-pillow/Pillow)，Jeffrey A. Clark 与贡献者；源自 PIL / Fredrik Lundh / Secret Labs AB | [layout.py](tools/layout.py) 绘制标题与字幕；离线教学例生成图片；剪映测试生成封面。直接安装版本 12.3.0 | [MIT-CMU](https://github.com/python-pillow/Pillow/blob/main/LICENSE) |
 | [AI MediaKit CLI](https://github.com/volcengine/mediakit-cli)，Volcengine | [understand_video.py](tools/understand_video.py) 的 `call_cli()` / `run()` 调用 `video video-understand-router` 与 `shared query-task`，完成视频理解接入 | [MIT](https://github.com/volcengine/mediakit-cli/blob/main/LICENSE)；云端能力另按服务条款使用 |
-| [pyJianYingDraft](https://github.com/GuanYixuan/pyJianYingDraft)，GuanYixuan 与贡献者 | [jianying_smoke.py](tools/jianying_smoke.py) 生成视频、原生文字和音频轨道，用于可编辑剪映草稿测试。直接安装版本 0.3.1 | [Apache-2.0](https://github.com/GuanYixuan/pyJianYingDraft/blob/main/LICENSE) |
+| [pyJianYingDraft](https://github.com/GuanYixuan/pyJianYingDraft)，GuanYixuan 与贡献者 | [jianying_draft.py](tools/jianying_draft.py) 的 `build()` 把合成产物转成视频、原生文字和音频轨道的可编辑剪映草稿；[jianying_smoke.py](tools/jianying_smoke.py) 生成兼容性测试草稿。直接安装版本 0.3.1 | [Apache-2.0](https://github.com/GuanYixuan/pyJianYingDraft/blob/main/LICENSE) |
+
+## 采用的实现
+
+| 项目与作者 | 采用内容与入口 | 许可证 |
+| --- | --- | --- |
+| [video-shotcraft](https://github.com/Vincentwei1021/video-shotcraft)，Vincentwei1021 与贡献者 | [剪映导出说明](https://github.com/Vincentwei1021/video-shotcraft/blob/main/references/jianying-export.md)中的两条做法：像素字号 ÷ 10.8 换算剪映字号（[jianying_draft.py](tools/jianying_draft.py) 的 `PX_PER_SIZE`），以及把媒体放进草稿目录以适应 Mac 剪映沙盒（`build()` 复制素材）。未引入其代码 | [Apache-2.0](https://github.com/Vincentwei1021/video-shotcraft/blob/main/LICENSE) |
 
 ## 草稿媒体探测依赖
 
-`jianying_smoke.py` 创建图片、视频和音频片段时，pyJianYingDraft 0.3.1 的 `local_materials.py` 中 `VideoMaterial` / `AudioMaterial` 调用以下组件读取媒体尺寸、轨道及实际时长。
+`jianying_draft.py` 与 `jianying_smoke.py` 创建图片、视频和音频片段时，pyJianYingDraft 0.3.1 的 `local_materials.py` 中 `VideoMaterial` / `AudioMaterial` 调用以下组件读取媒体尺寸、轨道及实际时长。
 
 | 项目 | 用途 | 许可证 |
 | --- | --- | --- |
