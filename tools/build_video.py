@@ -135,7 +135,7 @@ def export_draft(work: Path) -> str:
     except ImportError as exc:
         return f"未导出剪映草稿：缺少依赖（{exc.name}），按 requirements.txt 安装后可用 jianying_draft.py --work 补导出"
     if not J.DEFAULT_ROOT.is_dir():
-        return "未找到 Mac 剪映草稿目录，未导出剪映草稿"
+        return "未找到剪映草稿目录，未导出剪映草稿"
     try:
         return J.export(work, J.DEFAULT_ROOT)
     except (ValueError, OSError) as exc:

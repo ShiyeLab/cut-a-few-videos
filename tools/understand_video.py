@@ -57,7 +57,7 @@ def call_cli(cli: str, arguments: list[str], key: str) -> dict:
     try:
         result = subprocess.run([cli, "--cloud", *arguments], env=env,
                                 stdin=subprocess.DEVNULL, capture_output=True,
-                                text=True, timeout=120)
+                                text=True, encoding="utf-8", errors="replace", timeout=120)
     except (OSError, subprocess.TimeoutExpired):
         raise ValueError("MediaKit 调用中断；保留任务状态，未自动重发。") from None
     try:

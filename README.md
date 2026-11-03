@@ -59,11 +59,11 @@ python tools/build_video.py --project examples/demo/project.json --work projects
 
 ## 导出可编辑剪映草稿
 
-在 Mac 上运行 `build_video.py` 合成后，会自动在剪映草稿目录生成这条视频的草稿，打开剪映即可在首页看到：中央窗画面、底图、标题、底部文字、字幕和配音各自成轨，文字可以直接改，素材可以换。草稿和 MP4 用同一份时间轴；镜头之间是硬切，不带运镜与转场，过场、配乐和字体在剪映里自己加。
+在装有剪映的 Mac 或 Windows 上运行 `build_video.py`，合成后会自动在剪映草稿目录生成这条视频的草稿，打开剪映即可在首页看到：中央窗画面、底图、标题、底部文字、字幕和配音各自成轨，文字可以直接改，素材可以换。草稿和 MP4 用同一份时间轴；镜头之间是硬切，不带运镜与转场，过场、配乐和字体在剪映里自己加。
 
 合成时剪映正开着，草稿照常生成，只是暂不登记首页；退出剪映后运行 `python tools/jianying_draft.py --register` 补上。不需要草稿时给 `build_video.py` 加 `--no-jianying`；给以前的输出目录补导出用 `python tools/jianying_draft.py --work <输出目录>`。
 
-首次使用可先运行 `python tools/jianying_smoke.py` 生成一份 6 秒测试草稿，确认本机剪映能打开。Mac 首页登记、仅生成文件的用法与验收步骤见[验证说明](docs/validation.md#剪映草稿)。
+首次使用可先运行 `python tools/jianying_smoke.py` 生成一份 6 秒测试草稿，确认本机剪映能打开。首页登记、仅生成文件的用法与验收步骤见[验证说明](docs/validation.md#剪映草稿)。
 
 ## 文档
 

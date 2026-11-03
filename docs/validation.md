@@ -43,7 +43,7 @@ python tools/build_video.py --project examples/demo/project.json --work projects
 
 ### 兼容性测试
 
-环境需已安装 `requirements.txt` 中的依赖及 FFmpeg。先启动一次 Mac 剪映以建立草稿目录，再完全退出剪映，在仓库根目录执行：
+环境需已安装 `requirements.txt` 中的依赖及 FFmpeg。先启动一次剪映以建立草稿目录（Mac 在 `~/Movies/JianyingPro/…`，Windows 在 `%LOCALAPPDATA%\JianyingPro\…`），再完全退出剪映，在仓库根目录执行：
 
 ```sh
 python tools/jianying_smoke.py
@@ -51,7 +51,7 @@ python tools/jianying_smoke.py
 
 工具生成一个 1080×1920、30 fps、6 秒草稿，包含底图、中央视频、标题、字幕、音频五条轨道。标题与两句字幕为原生可编辑文字；音频是 440 Hz 测试音。媒体均由程序生成并放在新草稿内，不调用外部服务。
 
-每次生成独立工程 ID，正文、元数据和首页条目保持一致。工具备份 `root_meta_info.json` 后登记 Mac 首页，保留已有条目；剪映运行中或索引发生变化时停止登记。自定义位置用 `--draft-root`；仅生成文件、不修改首页时加 `--no-register`，目标目录须已存在。
+每次生成独立工程 ID，正文、元数据和首页条目保持一致。工具备份 `root_meta_info.json` 后登记首页，保留已有条目；剪映运行中或索引发生变化时停止登记。自定义位置用 `--draft-root`；仅生成文件、不修改首页时加 `--no-register`，目标目录须已存在。
 
 重新启动剪映，从首页打开 `cut-smoke-…` 草稿，依次验证：
 

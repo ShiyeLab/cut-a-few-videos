@@ -2,7 +2,7 @@
 """剪映草稿最小验证：生成一个含底图、中央窗视频、标题、字幕、配音五条轨道的测试草稿。
 
 测试素材由 FFmpeg 现场生成，放在草稿目录内；不调用任何外部服务。
-运行前先退出剪映；默认备份并更新 Mac 首页索引，再重新打开草稿。
+运行前先退出剪映；默认备份并更新首页索引，再重新打开草稿。
 仅生成文件时加 --no-register，不修改首页索引。
 草稿生成使用 pyJianYingDraft，来源与许可见 THIRD_PARTY.md。
 
@@ -50,7 +50,7 @@ def make_media(folder: Path) -> dict[str, Path]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--draft-root", type=Path, default=DEFAULT_ROOT, help="剪映草稿目录")
-    parser.add_argument("--no-register", action="store_true", help="仅生成草稿文件，不登记 Mac 首页")
+    parser.add_argument("--no-register", action="store_true", help="仅生成草稿文件，不登记首页")
     args = parser.parse_args()
     args.draft_root = args.draft_root.expanduser().resolve()
     if not args.draft_root.is_dir():
@@ -89,7 +89,7 @@ def main() -> int:
     meta = save_draft(script, folder, draft_id, name)
     if original is not None:
         backup = register_draft(args.draft_root, meta, original)
-        print(f"已登记 Mac 首页；原索引备份：{backup}")
+        print(f"已登记首页；原索引备份：{backup}")
     print(f"已生成草稿：{folder}")
     return 0
 

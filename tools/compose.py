@@ -28,7 +28,7 @@ TRANSITIONS = ("fade", "flash_white", "flash_black",
 
 
 def run(cmd: list[str], desc: str) -> subprocess.CompletedProcess:
-    proc = subprocess.run(cmd, capture_output=True, text=True)
+    proc = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
     if proc.returncode != 0:
         raise SystemExit(f"{desc} 失败 (exit {proc.returncode})\n命令: {' '.join(cmd)}\n"
                          f"--- stderr ---\n{proc.stderr[-3000:]}")
@@ -441,7 +441,7 @@ def verify(path: str, report_path: Path | None, stills_dir: Path | None,
     v = next((s for s in info["streams"] if s["codec_type"] == "video"), None)
     au = next((s for s in info["streams"] if s["codec_type"] == "audio"), None)
     dec = subprocess.run(["ffmpeg", "-v", "error", "-xerror", "-i", path, "-f", "null", "-"],
-                         capture_output=True, text=True)
+                         capture_output=True, text=True, encoding="utf-8", errors="replace")
     res = {
         "path": path,
         "duration": round(float(info["format"]["duration"]), 3),

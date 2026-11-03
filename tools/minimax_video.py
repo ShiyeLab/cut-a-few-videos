@@ -67,12 +67,12 @@ def save(path: Path, value) -> None:
 
 def probe_duration(path: Path) -> float:
     out = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration",
-                          "-of", "csv=p=0", str(path)], capture_output=True, text=True).stdout
+                          "-of", "csv=p=0", str(path)], capture_output=True, text=True, encoding="utf-8", errors="replace").stdout
     return float(out.strip())
 
 
 def ffmpeg(args: list[str]) -> None:
-    p = subprocess.run(["ffmpeg", "-v", "error", "-y", *args], capture_output=True, text=True)
+    p = subprocess.run(["ffmpeg", "-v", "error", "-y", *args], capture_output=True, text=True, encoding="utf-8", errors="replace")
     if p.returncode != 0:
         raise SystemExit(f"ffmpeg 失败: {' '.join(args)}\n{p.stderr[-800:]}")
 
@@ -97,7 +97,7 @@ def submit(item: dict, key: str, folder: Path) -> dict:
         "ratio": item.get("ratio", "1:1"),
     }
     if receipt_path.exists():
-        state = json.loads(receipt_path.read_text())
+        state = json.loads(receipt_path.read_text(encoding="utf-8"))
         if state.get("request") != body:
             raise SystemExit(f"{folder.name}: 请求已改变，请换 slug 或先确认旧任务")
         return state
@@ -125,7 +125,7 @@ TERMINAL = ("succeeded", "failed", "cancelled", "expired")  # 到终态即停止
 
 def poll(folder: Path, key: str, timeout_s: int = 900) -> dict:
     receipt_path = folder / "receipt.json"
-    state = json.loads(receipt_path.read_text())
+    state = json.loads(receipt_path.read_text(encoding="utf-8"))
     if state.get("status") in TERMINAL:
         return state
     if not state.get("task_id"):
@@ -156,7 +156,7 @@ def poll(folder: Path, key: str, timeout_s: int = 900) -> dict:
 
 def fetch(folder: Path, key: str) -> None:
     receipt_path = folder / "receipt.json"
-    state = json.loads(receipt_path.read_text())
+    state = json.loads(receipt_path.read_text(encoding="utf-8"))
     code, resp = call("GET", f"/v2/query/video_generation/{state['task_id']}", key)
     url = ((resp or {}).get("task", {}).get("content") or {}).get("url")
     if not url:
@@ -166,7 +166,7 @@ def fetch(folder: Path, key: str) -> None:
     dur = probe_duration(target)
     probe = subprocess.run(["ffprobe", "-v", "error", "-show_entries",
                             "stream=width,height,r_frame_rate,codec_name", "-of", "json", str(target)],
-                           capture_output=True, text=True).stdout
+                           capture_output=True, text=True, encoding="utf-8", errors="replace").stdout
     ffmpeg(["-i", str(target), "-f", "null", "-"])
     for frac, name in ((0.1, "f1"), (0.5, "f2"), (0.9, "f3")):
         ffmpeg(["-ss", f"{dur * frac:.2f}", "-i", str(target), "-frames:v", "1",
@@ -200,7 +200,7 @@ def main() -> int:
         folder.mkdir(parents=True, exist_ok=True)
         save(folder / "prompt.json", item)
         receipt = folder / "receipt.json"
-        state = json.loads(receipt.read_text()) if receipt.exists() else None
+        state = json.loads(receipt.read_text(encoding="utf-8")) if receipt.exists() else None
         if state and state.get("status") == "downloaded":
             print(f"  {item['slug']}: 已有结果，跳过")
             continue

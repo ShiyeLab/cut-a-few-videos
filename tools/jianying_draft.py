@@ -6,7 +6,7 @@ layout_report.json，和 MP4 共用同一份时间轴。草稿只是供修改的
 不带运镜与转场，过场和配乐由用户在剪映里加；文字用剪映默认字体，用户可自行替换。
 
 媒体复制进草稿目录（Mac 剪映沙盒只能访问自己目录下的文件）。build_video.py 合成后自动调用；
-剪映没开时备份并登记 Mac 首页索引，开着时只生成文件，退出剪映后用 --register 补登记。
+剪映没开时备份并登记首页索引，开着时只生成文件，退出剪映后用 --register 补登记。
 技术参考：pyJianYingDraft；video-shotcraft 的 references/jianying-export.md（字号与 Mac 安装）。
 
 用法：
@@ -32,11 +32,18 @@ from pyJianYingDraft import TrackSpec, TrackType
 
 import layout as L
 
-DEFAULT_ROOT = Path.home() / "Movies/JianyingPro/User Data/Projects/com.lveditor.draft"
+if sys.platform == "win32":
+    DEFAULT_ROOT = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData/Local")) / \
+        "JianyingPro/User Data/Projects/com.lveditor.draft"
+else:
+    DEFAULT_ROOT = Path.home() / "Movies/JianyingPro/User Data/Projects/com.lveditor.draft"
 PX_PER_SIZE = 10.8  # 像素字号 ÷ 10.8 ≈ 剪映字号；近似值，用户在剪映里可再调
 
 
 def app_running() -> bool:
+    if sys.platform == "win32":
+        processes = subprocess.check_output(["tasklist", "/FO", "CSV", "/NH"], text=True, errors="replace")
+        return '"jianyingpro.exe"' in processes.lower()
     if sys.platform != "darwin":
         return False
     processes = subprocess.check_output(["/bin/ps", "-axo", "comm="], text=True)
@@ -49,7 +56,7 @@ def read_index(root: Path) -> bytes:
         raise ValueError("请先退出剪映，再登记草稿；运行中的剪映可能覆盖首页索引")
     path = root / "root_meta_info.json"
     if not path.is_file():
-        raise ValueError("未找到 Mac 剪映首页索引；先启动一次剪映，或用 --no-register 仅生成文件")
+        raise ValueError("未找到剪映首页索引；先启动一次剪映，或用 --no-register 仅生成文件")
     original = path.read_bytes()
     index = json.loads(original)
     if not isinstance(index.get("all_draft_store"), list) or not isinstance(index.get("draft_ids"), int):
@@ -289,7 +296,7 @@ def main() -> int:
     mode.add_argument("--register", action="store_true", help="登记之前因剪映开着而未登记的草稿")
     parser.add_argument("--name", help="草稿名，默认取标题与版本目录名")
     parser.add_argument("--draft-root", type=Path, default=DEFAULT_ROOT, help="剪映草稿目录")
-    parser.add_argument("--no-register", action="store_true", help="仅生成草稿文件，不登记 Mac 首页")
+    parser.add_argument("--no-register", action="store_true", help="仅生成草稿文件，不登记首页")
     args = parser.parse_args()
     root = args.draft_root.expanduser().resolve()
     if not root.is_dir():

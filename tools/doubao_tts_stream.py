@@ -84,9 +84,9 @@ def main() -> int:
 
     work = Path(args.work)
     work.mkdir(parents=True, exist_ok=True)
-    text = "\n".join(s.strip() for s in Path(args.script).read_text().splitlines()
+    text = "\n".join(s.strip() for s in Path(args.script).read_text(encoding="utf-8").splitlines()
                      if s.strip() and not s.lstrip().startswith("#"))
-    direction = Path(args.direction).read_text().strip() if args.direction else None
+    direction = Path(args.direction).read_text(encoding="utf-8").strip() if args.direction else None
     payload = make_payload(text, args.speaker, direction, args.rate)
     fingerprint = hashlib.sha256(json.dumps(payload, ensure_ascii=False,
                                             sort_keys=True).encode()).hexdigest()
@@ -94,7 +94,7 @@ def main() -> int:
     receipt_path = work / "tts_receipt.json"
     audio_path = work / "voice.mp3"
     if receipt_path.exists():
-        state = json.loads(receipt_path.read_text())
+        state = json.loads(receipt_path.read_text(encoding="utf-8"))
         if state.get("input_sha256") != fingerprint:
             raise SystemExit("配音输入已改变（正文/音色/语速/指令），请使用新版本目录")
         if state.get("status") == "complete" and audio_path.exists() and (work / "timeline.json").exists():
