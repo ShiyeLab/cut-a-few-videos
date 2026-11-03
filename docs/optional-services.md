@@ -92,7 +92,7 @@ python tools/doubao_tts.py --script projects/my-video/script.txt \
 
 使用 `MINIMAX_API_KEY`，站点为 `https://api.minimaxi.com`，模型为 `MiniMax-H3`。配置须与该站点匹配。
 
-Agent 复制[空镜模板](../templates/ai-video.json)，保存到本条目录，用新的 `slug` 标识每个镜头。模板只示范提示词的写法，画面按[制作流程](../methods/制作流程.md#4-选镜头与补画面)的构思与提示词顺序为本条重新设计，不沿用示例内容。新环境镜头默认无手、无书、无文字；是否出现人物按内容决定。
+Agent 复制[空镜模板](../templates/ai-video.json)，保存到本条目录，用新的 `slug` 标识每个镜头。模板只示范提示词的写法，画面按[制作流程](../methods/制作流程.md#4-选镜头与补画面)的构思与提示词顺序为本条重新设计，不沿用示例内容。`ratio` 保持 `1:1`，与接近方形的中央窗一致，不改成 9:16。新环境镜头默认无手、无书、无文字；是否出现人物按内容决定。
 
 ```sh
 python tools/minimax_video.py --spec projects/my-video/ai-video.json --out projects/my-video/ai
