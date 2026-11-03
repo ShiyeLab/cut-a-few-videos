@@ -75,10 +75,10 @@ python tools/build_video.py --project examples/demo/project.json --work projects
 | [离线教学例](examples/demo/README.md) | 无需外部素材的完整运行例子 |
 | [检查与交付](docs/validation.md) | 自动检查与实际看片 |
 | [AI 执行说明](AGENTS.md) | 给制作 Agent 的工作要求 |
-| [开源依赖与参考](THIRD_PARTY.md) | 来源、作者、用途、许可证与技术参考 |
+| [开源依赖与署名](THIRD_PARTY.md) | 实际使用的项目、用途、代码入口与许可证 |
 
 ## 开源致谢
 
-本项目使用 [FFmpeg](https://ffmpeg.org/)、[Pillow](https://github.com/python-pillow/Pillow)、[MediaKit CLI](https://github.com/volcengine/mediakit-cli)、[pyJianYingDraft](https://github.com/GuanYixuan/pyJianYingDraft) 和 [思源宋体](https://github.com/adobe-fonts/source-han-serif)。剪映草稿相关技术参考 [video-shotcraft](https://github.com/Vincentwei1021/video-shotcraft) 的导出说明。感谢各项目作者与贡献者；具体使用范围、间接依赖和许可证见[署名说明](THIRD_PARTY.md)。
+本项目使用 [FFmpeg](https://ffmpeg.org/) 处理音视频、[Pillow](https://github.com/python-pillow/Pillow) 绘制文字与图片、[MediaKit CLI](https://github.com/volcengine/mediakit-cli) 接入视频理解、[pyJianYingDraft](https://github.com/GuanYixuan/pyJianYingDraft) 生成可编辑剪映草稿。感谢各项目作者与贡献者；实际调用入口和许可证见[署名说明](THIRD_PARTY.md)。
 
 自己的素材、声音、字体、回执与成片放在 `projects/`、`local/`，默认不进入 Git。维护者：[ShiyeLab](https://github.com/ShiyeLab)。

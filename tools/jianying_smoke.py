@@ -4,8 +4,7 @@
 测试素材由 FFmpeg 现场生成，放在草稿目录内；不调用任何外部服务。
 运行前先退出剪映；默认备份并更新 Mac 首页索引，再重新打开草稿。
 仅生成文件时加 --no-register，不修改首页索引。
-草稿生成使用 pyJianYingDraft；文字坐标与 Mac 安装的技术参考为
-video-shotcraft 的 references/jianying-export.md；来源与许可见 THIRD_PARTY.md。
+草稿生成使用 pyJianYingDraft，来源与许可见 THIRD_PARTY.md。
 
 用法：
   python3 tools/jianying_smoke.py
