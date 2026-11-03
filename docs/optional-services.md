@@ -92,14 +92,14 @@ python tools/doubao_tts.py --script projects/my-video/script.txt \
 
 使用 `MINIMAX_API_KEY`，站点为 `https://api.minimaxi.com`，模型为 `MiniMax-H3`。配置须与该站点匹配。
 
-Agent 复制并修改[空镜模板](../templates/ai-video.json)，保存到本条目录，用新的 `slug` 标识每个镜头。按口播与前后承接设计运动；新环境镜头默认无手、无书、无文字。模板里的窗帘镜头不安排人物；其他情绪镜头是否出现人物按内容决定。
+Agent 复制[空镜模板](../templates/ai-video.json)，保存到本条目录，用新的 `slug` 标识每个镜头。模板只示范提示词的写法，画面按[制作流程](../methods/制作流程.md#4-选镜头与补画面)的构思与提示词顺序为本条重新设计，不沿用示例内容。新环境镜头默认无手、无书、无文字；是否出现人物按内容决定。
 
 ```sh
 python tools/minimax_video.py --spec projects/my-video/ai-video.json --out projects/my-video/ai
 python tools/minimax_video.py --spec projects/my-video/ai-video.json --out projects/my-video/ai --poll-only
 ```
 
-第一条会提交新镜头；先提交全部尚未提交的项目，再查询各自任务。`--only window-light` 只处理指定 slug，`--timeout` 控制一次轮询等待秒数，默认 900。查询中断只重查原任务，提交失败或未知结果不自动重提。
+第一条会提交新镜头；先提交全部尚未提交的项目，再查询各自任务。`--only ink-bloom` 只处理指定 slug，`--timeout` 控制一次轮询等待秒数，默认 900。查询中断只重查原任务，提交失败或未知结果不自动重提。
 
 每个镜头目录保留提示词、回执、`clip.mp4` 与三张抽帧图。已有 downloaded 结果直接跳过；改变提示词时必须改 slug。超过等待时间后，用相同目录和 `--poll-only` 继续查询。是否完成应看回执的 downloaded 状态与实际文件。
 
