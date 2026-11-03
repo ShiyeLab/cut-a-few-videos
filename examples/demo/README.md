@@ -14,9 +14,9 @@ python tools/build_video.py --project examples/demo/project.json --work projects
 | [project.json](project.json) | 标题、路径、时长、转场和音乐参数 |
 | [script.txt](script.txt) | 三句英文教学字幕 |
 | [timeline.json](timeline.json) | 人工指定的教学时间轴，无口播时使用 |
-| [scenes.json](scenes.json) | 句首到画面、选段和推近的对应 |
+| [scenes.json](scenes.json) | 句首到画面、选段、运镜和转场的对应 |
 | `generated/` | 命令生成的输入和英文版布局，不进入 Git |
 
-先改标题，再输出 `v2`，可以看到标题变化而底图不变。再把某镜的 `zoom` 改为 0，对照居中推近与静止的区别。加 `--no-music` 得到全静音版。
+先改标题，再输出 `v2`，可以看到标题变化而底图不变。再改某镜的 `move` 或 `transition`，对照不同运镜与转场。加 `--no-music` 得到全静音版。
 
 教学例的英文字幕与手工秒数仅为无需配音、无需字体包即可运行。正式中文视频换上自己的中文字体、完整口播、配音与真实时间轴，步骤见[使用说明](../../docs/getting-started.md)。

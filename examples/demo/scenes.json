@@ -1,8 +1,8 @@
 [
-  {"anchor": null, "asset": "examples/demo/generated/window.png", "fit": "cover", "zoom": 0.035,
-   "reason": "观察网格和圆形的缓慢推近"},
+  {"anchor": null, "asset": "examples/demo/generated/window.png", "fit": "cover", "move": "push",
+   "reason": "观察网格和圆形的匀速推近"},
   {"anchor": "Add a moving scene", "asset": "examples/demo/generated/motion.mp4", "in": 0.2, "fit": "cover",
-   "reason": "用实际视频验证选段和中央叠化"},
-  {"anchor": "Keep the ending", "asset": "examples/demo/generated/window.png", "fit": "blur", "zoom": 0.025,
-   "reason": "回到起始画面，末句字幕保持至片尾"}
+   "transition": "push_left", "reason": "用实际视频验证选段与带缓动的推入转场"},
+  {"anchor": "Keep the ending", "asset": "examples/demo/generated/window.png", "fit": "blur", "move": "pan_left",
+   "transition": "flash_white", "reason": "闪白回到起始画面，匀速平移，末句字幕保持至片尾"}
 ]

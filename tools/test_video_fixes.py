@@ -10,47 +10,156 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from PIL import Image, ImageDraw, ImageStat
+from PIL import Image, ImageDraw, ImageFilter, ImageStat
 
 import compose as C
 import doubao_tts_stream as T
 from doubao_tts import subtitles
 from doubao_preview import make_payload, receive
 
+W, H, FPS = 320, 340, 30
+CFG = {"canvas": {"fps": FPS}, "bands": {"center": {"w": W, "h": H}},
+       "editing": {"move_rate": 0.05}}
+
+
+def gray_frames(video: Path) -> list[bytes]:
+    raw = subprocess.check_output(["ffmpeg", "-v", "error", "-i", str(video),
+                                   "-f", "rawvideo", "-pix_fmt", "gray", "-"])
+    return [raw[i:i + W * H] for i in range(0, len(raw), W * H)]
+
+
+def centroid(frame: bytes, box: tuple[int, int, int, int]) -> tuple[float, float]:
+    x0, y0, x1, y1 = box
+    mass = xsum = ysum = 0
+    for y in range(y0, y1):
+        row = frame[y * W:(y + 1) * W]
+        for x in range(x0, x1):
+            value = max(0, row[x] - 40)
+            mass += value
+            xsum += x * value
+            ysum += y * value
+    return xsum / mass, ysum / mass
+
 
 class VideoFixes(unittest.TestCase):
-    def test_static_push_moves_without_pixel_jumps(self):
+    def test_moves_are_uniform_without_stutter(self):
+        # 柔边光点的质心可测到亚像素位移；逐帧速度须稳定，前后段速度一致（匀速）。
         with tempfile.TemporaryDirectory() as directory:
             folder = Path(directory)
-            image = Image.new("RGB", (320, 340))
-            ImageDraw.Draw(image).ellipse((68, 73, 92, 97), fill="white")
+            image = Image.new("L", (W, H), 30)
+            ImageDraw.Draw(image).ellipse((250, 260, 270, 280), fill=255)
             source = folder / "marker.png"
-            image.save(source)
-            cfg = {"canvas": {"fps": 30}, "bands": {"center": {"w": 320, "h": 340}}}
-            video = C.render_center([{"asset": str(source), "start": 0, "end": 3, "zoom": 0.06}],
-                                    cfg, 3, folder, 0)
-            raw = subprocess.check_output(["ffmpeg", "-v", "error", "-i", str(video),
-                                           "-f", "rawvideo", "-pix_fmt", "gray", "-"])
-            frame_size = 320 * 340
-            self.assertEqual(len(raw), 90 * frame_size)
-            centers = []
-            for start in range(0, len(raw), frame_size):
-                frame = raw[start:start + frame_size]
-                mass = xsum = ysum = 0
-                for y in range(50, 120):
-                    for x in range(50, 110):
-                        value = max(0, frame[y * 320 + x] - 16)
+            image.filter(ImageFilter.GaussianBlur(4)).convert("RGB").save(source)
+            for move, axis in [("push", 0), ("pull", 0), ("pan_left", 0), ("pan_up", 1)]:
+                work = folder / move
+                work.mkdir()
+                video = C.render_center([{"asset": str(source), "start": 0, "end": 3, "move": move}],
+                                        CFG, 3, work, 0)
+                frames = gray_frames(video)
+                self.assertEqual(len(frames), 90)
+                track = []
+                for frame in frames:
+                    point = track[-1] if track else centroid(frame, (170, 170, W, H))
+                    for _ in range(2):  # 先粗定位再精算，避免框住半个光点
+                        x, y = int(point[0]), int(point[1])
+                        point = centroid(frame, (x - 22, y - 22, x + 22, y + 22))
+                    track.append(point)
+                steps = [b[axis] - a[axis] for a, b in zip(track, track[1:])]
+                mean = sum(steps) / len(steps)
+                self.assertGreater(abs(mean), 0.1, move)
+                ratios = [s / mean for s in steps]
+                self.assertGreater(min(ratios), 0.5, (move, ratios))
+                self.assertLess(max(ratios), 1.5, (move, ratios))
+                third = len(steps) // 3
+                early, late = sum(steps[:third]) / third, sum(steps[-third:]) / third
+                self.assertLess(abs(early / late - 1), 0.12, (move, early, late))
+
+    def test_final_video_keeps_slow_push_smooth(self):
+        # 默认速度下每帧只移动约 0.1 像素；有损编码常把这种位移跳过成停顿，须检查最终成片。
+        import argparse
+        import layout as L
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory)
+            cfg = json.loads(Path("template/layout.json").read_text(encoding="utf-8"))
+            for spec in cfg["fonts"].values():
+                spec["path"] = "pillow-default"
+            (folder / "layout.json").write_text(json.dumps(cfg), encoding="utf-8")
+            # 暗部纹理：足以让编码器按真实照片的方式分配码率，又不进入光点的测量阈值。
+            texture = Image.effect_noise((270, 288), 40).resize((1080, 1150), Image.BICUBIC).point(
+                lambda v: 50 + (v - 128) * 0.4)
+            blob = Image.new("L", (1080, 1150), 0)
+            ImageDraw.Draw(blob).ellipse((990, 565, 1010, 585), fill=255)
+            Image.composite(Image.new("L", (1080, 1150), 255), texture,
+                            blob.filter(ImageFilter.GaussianBlur(4))).convert("RGB").save(folder / "page.png")
+            L.render_card(cfg, "", "")[0].save(folder / "card.png")
+            (folder / "shots.json").write_text(json.dumps(
+                [{"asset": str(folder / "page.png"), "end": 3, "move": "push"}]), encoding="utf-8")
+            C.compose(argparse.Namespace(config=str(folder / "layout.json"), card=str(folder / "card.png"),
+                shots=str(folder / "shots.json"), subs=None, audio=None, music=None, no_music=True,
+                music_gain=-14, duration=3, transition=0, out=str(folder / "out.mp4"), work=str(folder)))
+            # 只取光点附近 120×120 区域，光点在成片中位于 x≈1000、y≈380+575。
+            raw = subprocess.check_output(["ffmpeg", "-v", "error", "-i", str(folder / "out.mp4"),
+                                           "-vf", "crop=120:120:940:895", "-f", "rawvideo", "-pix_fmt", "gray", "-"])
+            xs = []
+            for i in range(0, len(raw), 120 * 120):
+                frame = raw[i:i + 120 * 120]
+                mass = xsum = 0
+                for y in range(30, 90):
+                    for x in range(120):
+                        value = max(0, frame[y * 120 + x] - 110)
                         mass += value
                         xsum += x * value
-                        ysum += y * value
-                centers.append((xsum / mass, ysum / mass))
-            for axis in (0, 1):
-                self.assertLess(centers[-1][axis] - centers[0][axis], -3)
-                jumps = [b[axis] - a[axis] for a, b in zip(centers, centers[1:])]
-                self.assertLess(max(abs(step) for step in jumps), 0.45)
-                self.assertLess(max(jumps), 0.15)
+                xs.append(xsum / mass)
+            steps = [b - a for a, b in zip(xs, xs[1:])]
+            mean = sum(steps) / len(steps)
+            self.assertGreater(mean, 0.05)
+            self.assertEqual([round(s / mean, 2) for s in steps if s / mean < 0.4], [])
 
-    def test_blur_background_is_equally_soft_with_zoom(self):
+    def test_transitions_start_and_stop_smoothly(self):
+        # 逐帧变化量不得突跳：内置闪白开头两帧跳变、内置滑入首帧即全速，均不允许。
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory)
+            # 非周期渐变：位移量与帧差成正比，避免条纹相位造成的测量混叠。
+            for name, color in [("a", (200, 60, 50)), ("b", (40, 80, 170))]:
+                image = Image.new("RGB", (W, H))
+                draw = ImageDraw.Draw(image)
+                for x in range(W):
+                    k = 0.35 + 0.65 * x / W
+                    draw.line((x, 0, x, H), fill=tuple(int(c * k) for c in color))
+                image.save(folder / f"{name}.png")
+            for name in C.TRANSITIONS:
+                work = folder / name
+                work.mkdir()
+                shots = [{"asset": str(folder / "a.png"), "start": 0, "end": 1},
+                         {"asset": str(folder / "b.png"), "start": 1, "end": 2, "transition": name}]
+                frames = gray_frames(C.render_center(shots, CFG, 2, work, 0.5))
+                change = [sum(abs(p - q) for p, q in zip(a[::7], b[::7])) / len(a[::7])
+                          for a, b in zip(frames[26:50], frames[27:51])]
+                self.assertLess(change[0], 1, name)  # 转场前静止
+                self.assertLess(change[-1], 1, name)  # 转场后静止
+                if name == "fade":
+                    continue  # 线性叠化：亮度匀速变化
+                peak = max(change)
+                jolts = [abs(b - a) / peak for a, b in zip(change, change[1:])]
+                self.assertLess(max(jolts), 0.6, (name, [round(c, 1) for c in change]))
+
+    def test_unknown_move_or_transition_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "a.png"
+            Image.new("RGB", (W, H)).save(source)
+            for shot, message in [({"zoom": 0.03}, "zoom 已停用"), ({"move": "spin"}, "move"),
+                                  ({"focus_y": 2}, "focus_y")]:
+                shots_file = Path(directory) / "shots.json"
+                shots_file.write_text(json.dumps([{"asset": str(source), "end": 2, **shot}]), encoding="utf-8")
+                with self.assertRaisesRegex(SystemExit, message):
+                    C.load_shots(type("Args", (), {"shots": str(shots_file)}), 2)
+            shots_file.write_text(json.dumps([{"asset": str(source), "end": 1},
+                                              {"asset": str(source), "start": 1, "end": 2,
+                                               "transition": "zoomin"}]), encoding="utf-8")
+            with self.assertRaisesRegex(SystemExit, "transition"):
+                C.load_shots(type("Args", (), {"shots": str(shots_file)}), 2)
+
+    def test_blur_background_is_equally_soft_with_move(self):
         with tempfile.TemporaryDirectory() as directory:
             folder = Path(directory)
             image = Image.new("RGB", (480, 180), "white")
@@ -61,11 +170,11 @@ class VideoFixes(unittest.TestCase):
             image.save(source)
             cfg = {"canvas": {"fps": 30}, "bands": {"center": {"w": 320, "h": 340}}}
             spread = []
-            for zoom in (0, 0.001):
-                work = folder / f"zoom{zoom}"
+            for move in (None, "push"):
+                work = folder / f"move-{move}"
                 work.mkdir()
                 video = C.render_center([{"asset": str(source), "start": 0, "end": 1,
-                                          "fit": "blur", "zoom": zoom}], cfg, 1, work, 0)
+                                          "fit": "blur", "move": move}], cfg, 1, work, 0)
                 raw = subprocess.check_output(["ffmpeg", "-v", "error", "-i", str(video), "-frames:v", "1",
                                                "-f", "rawvideo", "-pix_fmt", "gray", "-"])
                 # 只看前景上方的虚化背景区。

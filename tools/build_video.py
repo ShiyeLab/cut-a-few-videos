@@ -72,7 +72,8 @@ def prepare(project: dict, work: Path, no_voice: bool, no_music: bool) -> argpar
             cfg["fonts"][key]["stroke_width"] = 3
             cfg["fonts"][key].setdefault("shadow", {"dx": 0, "dy": 3, "blur": 7,
                                                    "opacity": 0.5, "color": "#18252B"})
-    cfg["editing"] = {"transition_seconds": transition}
+    cfg["editing"] = {"transition_seconds": transition,
+                      "move_rate": float(project.get("move_rate", C.MOVE_RATE))}
     subs = []
     for i, cue in enumerate(timeline):
         start = max(0, float(cue["start"]) - 0.03)

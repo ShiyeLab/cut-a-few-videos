@@ -19,6 +19,12 @@ from layout import render_subtitle_layer  # noqa: E402
 
 IMAGE_EXT = {".png", ".jpg", ".jpeg", ".webp", ".bmp"}
 TOL = 0.06  # 镜头表总长与音频时长的允许误差（秒）
+MOVE_RATE = 0.007  # 运镜速度：每秒放大 0.7%；平移按同等余量匀速移动
+MOVES = ("push", "pull", "pan_left", "pan_right", "pan_up", "pan_down")
+SOFT = {"soft_left": "smoothleft", "soft_right": "smoothright",
+        "soft_up": "smoothup", "soft_down": "smoothdown"}
+TRANSITIONS = ("fade", "flash_white", "flash_black",
+               "push_left", "push_right", "push_up", "push_down", *SOFT)
 
 
 def run(cmd: list[str], desc: str) -> subprocess.CompletedProcess:
@@ -38,17 +44,15 @@ def media_duration(path: str) -> float:
     return float(probe(path)["format"]["duration"])
 
 
-def fit_statements(src: str, dst: str, win: dict, fps: int, spec: dict,
-                   scale: int = 1) -> list[str]:
-    """一个镜头的缩放处理：cover 裁切填满 / contain 补底色 / blur 虚化背景 + 完整前景。
-    scale 为放大画布的倍数，虚化半径随之放大，缩回后与不推近的镜头一致。"""
+def fit_statements(src: str, dst: str, win: dict, fps: int, spec: dict) -> list[str]:
+    """一个镜头的缩放处理：cover 裁切填满 / contain 补底色 / blur 虚化背景 + 完整前景。"""
     w, h = win["w"], win["h"]
     fit = (spec.get("fit") or "cover").lower()
     if fit == "blur":
         return [
             f"[{src}]split=2[{dst}bg0][{dst}fg0]",
             f"[{dst}bg0]scale={w}:{h}:force_original_aspect_ratio=increase,crop={w}:{h},"
-            f"gblur=sigma={26 * scale},eq=brightness=-0.06[{dst}bg]",
+            f"gblur=sigma=26,eq=brightness=-0.06[{dst}bg]",
             f"[{dst}fg0]scale={w}:{h}:force_original_aspect_ratio=decrease[{dst}fg]",
             f"[{dst}bg][{dst}fg]overlay=(W-w)/2:(H-h)/2,setsar=1,fps={fps}[{dst}]",
         ]
@@ -57,8 +61,70 @@ def fit_statements(src: str, dst: str, win: dict, fps: int, spec: dict,
                 f"pad={w}:{h}:(ow-iw)/2:(oh-ih)/2:color=0x0B1B2B,setsar=1,fps={fps}[{dst}]"]
     focus = (spec.get("focus") or "center").lower()
     x = {"left": "0", "right": "in_w-out_w"}.get(focus, "(in_w-out_w)/2")
+    # focus_y：竖向取景位置，0 取顶部、0.5 取正中、1 取底部。
+    y = f"(in_h-out_h)*{float(spec.get('focus_y', 0.5)):.4f}"
     return [f"[{src}]scale={w}:{h}:force_original_aspect_ratio=increase,"
-            f"crop={w}:{h}:{x}:(in_h-out_h)/2,setsar=1,fps={fps}[{dst}]"]
+            f"crop={w}:{h}:{x}:{y},setsar=1,fps={fps}[{dst}]"]
+
+
+def move_filter(move: str, rate: float, length: float, fps: int) -> str:
+    """匀速运镜：逐帧计算亚像素取景框并做三次插值，避免整数裁切造成一顿一顿。
+
+    push/pull 每秒缩放 rate；平移先放大到整镜所需余量，再从一侧匀速移到另一侧，
+    因此同一 rate 下推拉与平移的视觉速度一致。pan_left 表示画面内容向左移动。
+    """
+    t = f"min(in/{fps},{length:.6f})"
+    if move in ("push", "pull"):
+        z = f"(1+{rate}*{t})" if move == "push" else f"(1+{rate}*({length:.6f}-{t}))"
+        x0, y0, w, h = f"W/2*(1-1/{z})", f"H/2*(1-1/{z})", f"W/{z}", f"H/{z}"
+    else:
+        z = 1 + rate * length
+        progress = f"({t}/{length:.6f})"
+        forward = move in ("pan_left", "pan_up")
+        q = progress if forward else f"(1-{progress})"
+        margin_x, margin_y = f"W*{1 - 1 / z:.6f}", f"H*{1 - 1 / z:.6f}"
+        x0 = f"{margin_x}*{q}" if move in ("pan_left", "pan_right") else f"{margin_x}/2"
+        y0 = f"{margin_y}*{q}" if move in ("pan_up", "pan_down") else f"{margin_y}/2"
+        w, h = f"W/{z:.6f}", f"H/{z:.6f}"
+    return (f"perspective=x0='{x0}':y0='{y0}':x1='{x0}+{w}':y1='{y0}':"
+            f"x2='{x0}':y2='{y0}+{h}':x3='{x0}+{w}':y3='{y0}+{h}':"
+            "interpolation=cubic:eval=frame")
+
+
+def _smooth(x: str) -> str:
+    return f"(({x})*({x})*(3-2*({x})))"
+
+
+def _sample(src: str, x: str, y: str) -> str:
+    return f"if(eq(PLANE,0),{src}0({x},{y}),if(eq(PLANE,1),{src}1({x},{y}),{src}2({x},{y})))"
+
+
+def xfade_options(name: str) -> str:
+    """转场参数。内置推拉、闪白为匀速或突跳，这里统一改为平滑起停的自定义曲线。"""
+    if name == "fade":
+        return "transition=fade"
+    if name in SOFT:
+        return f"transition={SOFT[name]}"
+    s = "(1-P)"  # xfade 的 P 从 1 降到 0，s 为转场进度
+    if name.startswith("flash_"):
+        level = "if(eq(PLANE,0),235,128)" if name == "flash_white" else "if(eq(PLANE,0),16,128)"
+        rise, fall = _smooth(f"min({s}*2,1)"), _smooth(f"min((1-{s})*2,1)")
+        expr = f"if(lt({s},0.5),A*(1-{rise})+{level}*{rise},B*(1-{fall})+{level}*{fall})"
+        return f"transition=custom:expr='{expr}'"
+    e = _smooth(s)
+    if name in ("push_left", "push_up"):
+        axis, size = ("X", "W") if name == "push_left" else ("Y", "H")
+        pos = f"({axis}+{e}*{size})"
+        inside, outside = pos, f"({pos}-{size})"
+        test = f"lt({pos},{size})"
+    else:
+        axis, size = ("X", "W") if name == "push_right" else ("Y", "H")
+        pos = f"({axis}-{e}*{size})"
+        inside, outside = pos, f"({pos}+{size})"
+        test = f"gte({pos},0)"
+    coords = (lambda v: (v, "Y")) if axis == "X" else (lambda v: ("X", v))
+    expr = f"if({test},{_sample('a', *coords(inside))},{_sample('b', *coords(outside))})"
+    return f"transition=custom:expr='{expr}'"
 
 
 def load_shots(args: argparse.Namespace, duration: float) -> list[dict]:
@@ -77,6 +143,15 @@ def load_shots(args: argparse.Namespace, duration: float) -> list[dict]:
             raise SystemExit(f"第 {i + 1} 个镜头时间非法: {s['start']} → {s['end']}")
         if not Path(s["asset"]).exists():
             raise SystemExit(f"第 {i + 1} 个镜头素材不存在: {s['asset']}")
+        if s.get("zoom"):
+            raise SystemExit(f"第 {i + 1} 个镜头的 zoom 已停用：改用 move（{'/'.join(MOVES)}），"
+                             "速度由项目的 move_rate 统一")
+        if s.get("move") and s["move"] not in MOVES:
+            raise SystemExit(f"第 {i + 1} 个镜头的 move 只能是 {'/'.join(MOVES)}")
+        if i and s.get("transition", "fade") not in TRANSITIONS:
+            raise SystemExit(f"第 {i + 1} 个镜头的 transition 只能是 {'/'.join(TRANSITIONS)}")
+        if not 0 <= float(s.get("focus_y", 0.5)) <= 1:
+            raise SystemExit(f"第 {i + 1} 个镜头的 focus_y 必须在 0 到 1 之间")
         total = float(s["end"])
 
     if abs(total - duration) > TOL:
@@ -119,6 +194,9 @@ def render_center(shots: list[dict], cfg: dict, duration: float, work: Path,
                   transition: float) -> Path:
     """只给中央内容窗做叠化；重叠所需时长加在前镜尾部，不缩短成片。"""
     fps, win = cfg["canvas"]["fps"], cfg["bands"]["center"]
+    rate = float(cfg.get("editing", {}).get("move_rate", MOVE_RATE))
+    if not 0 < rate <= 0.05:
+        raise SystemExit("move_rate 应在 0 到 0.05 之间（每秒缩放比例）")
     transition = round(transition * fps) / fps
     if transition < 0:
         raise SystemExit("转场时长不能为负")
@@ -143,38 +221,32 @@ def render_center(shots: list[dict], cfg: dict, duration: float, work: Path,
             inputs += ["-threads", "2", "-i", source]
         filters.append(f"[{n}:v]trim=start={cin:.6f}:duration={length * speed:.6f},"
                        f"setpts=(PTS-STARTPTS)/{speed:.6f}[sr{n}]")
-        zoom = float(shot.get("zoom") or 0) if Path(source).suffix.lower() in IMAGE_EXT else 0
-        # 在较大画布上计算裁切位置，再缩回输出尺寸，避免微小推近逐像素跳动。
-        scale = 4 if zoom else 1
-        fit_win = {**win, "w": win["w"] * scale, "h": win["h"] * scale}
-        filters.extend(fit_statements(f"sr{n}", f"fit{n}", fit_win, fps, shot, scale))
+        filters.extend(fit_statements(f"sr{n}", f"fit{n}", win, fps, shot))
         tail = f"fit{n}"
-        if zoom:
-            frames = max(1, round(length * fps))
-            progress = f"min(on/{max(1, frames - 1)},1)"
-            eased = f"({progress})*({progress})*(3-2*({progress}))"
-            filters.append(
-                f"[fit{n}]format=yuv444p,zoompan=z='1+{zoom:.6f}*({eased})':"
-                f"x='iw/2-iw/zoom/2':y='ih/2-ih/zoom/2':d=1:"
-                f"s={win['w']}x{win['h']}:fps={fps}[zoom{n}]")
-            tail = f"zoom{n}"
-        filters.append(f"[{tail}]format=yuv420p,settb=AVTB,setpts=PTS-STARTPTS[shot{n}]")
+        if shot.get("move"):
+            filters.append(f"[fit{n}]format=yuv444p,{move_filter(shot['move'], rate, length, fps)}[move{n}]")
+            tail = f"move{n}"
+        # 转场在 4:4:4 下计算，自定义曲线的取样坐标对所有平面一致。
+        filters.append(f"[{tail}]format=yuv444p,settb=AVTB,setpts=PTS-STARTPTS[shot{n}]")
         labels.append(f"shot{n}")
     last = labels[0]
     if transition:
         for n in range(1, len(shots)):
             offset = round(float(shots[n]["start"]) * fps) / fps
-            filters.append(f"[{last}][shot{n}]xfade=transition=fade:duration={transition:.6f}:"
-                           f"offset={offset:.6f}[join{n}]")
+            filters.append(f"[{last}][shot{n}]xfade={xfade_options(shots[n].get('transition', 'fade'))}:"
+                           f"duration={transition:.6f}:offset={offset:.6f}[join{n}]")
             last = f"join{n}"
     elif len(shots) > 1:
         filters.append("".join(f"[{lb}]" for lb in labels) + f"concat=n={len(labels)}:v=1:a=0[joined]")
         last = "joined"
+    filters.append(f"[{last}]format=yuv420p[centerout]")
+    last = "centerout"
     out = work / "center.mp4"
     temp = work / "center.partial.mp4"
     run(["ffmpeg", "-hide_banner", "-v", "error", "-y", "-filter_complex_threads", "1", *inputs,
          "-filter_complex", ";".join(filters), "-map", f"[{last}]", "-an", "-t", f"{duration:.6f}",
-         "-c:v", "libx264", "-threads", "4", "-preset", "fast", "-crf", "17", "-pix_fmt", "yuv420p",
+         # 中间文件无损：有损编码会把每帧零点几像素的匀速推镜量化成停顿。
+         "-c:v", "libx264", "-threads", "4", "-preset", "fast", "-qp", "0", "-pix_fmt", "yuv420p",
          "-r", str(fps), "-movflags", "+faststart", str(temp)], "中央画面与转场")
     if abs(media_duration(str(temp)) - duration) > TOL:
         raise SystemExit("中央画面时长不符，未用于正式成片")
@@ -334,6 +406,7 @@ def compose(args: argparse.Namespace) -> dict:
            "-map", "[vout]", "-map", f"{audio_idx}:a",
            "-t", f"{duration:.3f}", "-r", str(FPS),
            "-c:v", enc["vcodec"], "-threads", "4", "-crf", str(enc["crf"]), "-preset", enc["preset"],
+           *(["-x264-params", enc["x264_params"]] if enc.get("x264_params") else []),
            "-pix_fmt", "yuv420p", "-color_range", "tv", "-profile:v", "high", "-level", "4.1",
            "-c:a", enc["acodec"], "-b:a", enc["abitrate"], "-ar", str(a["sample_rate"]), "-ac", "2",
            "-movflags", "+faststart", temp]
@@ -347,7 +420,8 @@ def compose(args: argparse.Namespace) -> dict:
 
     return {"output": out, "duration": round(duration, 3), "shots": len(shots),
             "shot_table": [{"start": s["start"], "end": s["end"], "asset": Path(s["asset"]).name,
-                            "fit": s.get("fit", "cover"), "in": s.get("in")} for s in shots],
+                            "fit": s.get("fit", "cover"), "in": s.get("in"), "move": s.get("move"),
+                            "transition": s.get("transition")} for s in shots],
             "subs_count": len(sub_layers), "music": args.music, "transition_seconds": transition,
             "verification": report}
 

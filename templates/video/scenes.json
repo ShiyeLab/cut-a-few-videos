@@ -3,6 +3,7 @@
     "anchor": null,
     "asset": "projects/my-video/assets/cover.png",
     "fit": "blur",
+    "move": "push",
     "reason": "首镜示例：填写与当前口播匹配的真实画面"
   },
   {
@@ -10,6 +11,7 @@
     "asset": "projects/my-video/assets/turn.mp4",
     "in": 0,
     "fit": "cover",
-    "reason": "填写实际看过的动作、源区间与采用理由"
+    "transition": "push_left",
+    "reason": "填写实际看过的动作、源区间、采用理由与转场选择"
   }
 ]

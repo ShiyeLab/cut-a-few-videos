@@ -13,7 +13,7 @@
 | 生视频或视频检索 | 本地 MP4 等 FFmpeg 可读视频 | `scenes.json` 的 `asset`、`in`；检查真实动作、尺寸和源区间，给叠化留足尾段 |
 | 配音或用户录音 | MP3/WAV/M4A 等完整音频 | `project.json` 的 `voice`；听完整口播，记录对应的实际时间轴 |
 | 转写与对齐 | `timeline.json` 数组，每条有 `start`、`end`、`text` | `project.json` 的 `timeline`；时间单位为秒，正文完整且顺序一致，不能均分估时 |
-| 音乐 | 本地音频或不配乐 | `project.json` 的 `music`；不用时设 null，并记录具体录音来源 |
+| 音乐 | 默认不配乐，用户在剪映添加 | `project.json` 的 `music` 保持 null |
 | 主 Agent | 文案、素材选择与项目配置 | 不改变以上文件约定；能执行本地工具即可 |
 
 例如，换用其他生图 API 时，Agent 按该服务的协议调用，保存图片，再把 `band_art` 改成图片路径。配音服务不返回时间戳时，继续使用独立对齐工具或按实际音频标注，不需要改合成器。

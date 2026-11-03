@@ -2,18 +2,33 @@
 
 可以先把素材交给 Agent，再由 Agent 按本文检查环境并准备文件。使用者无需预先填写镜头表或技术参数。
 
-## 准备环境
+## 首次运行由 Agent 完成
 
-Python 使用 3.12。FFmpeg、ffprobe 需在终端可执行，FFmpeg 需含 `libx264`、AAC、QTRLE 编码和 `overlay`、`xfade`、`zoompan`、`loudnorm` 等滤镜。文字由 Pillow 渲染，不依赖 `drawtext` 或 `subtitles`。
-
-macOS 可用 Homebrew 安装：
+用户 clone 项目后不需要自己装任何东西。Agent 首次运行时在 macOS 上执行以下步骤，已存在的项跳过；需要输入系统密码或网络失败时再请用户处理。
 
 ```sh
-brew install python@3.12 ffmpeg
+# 1. 命令行依赖（未装 Homebrew 时先按 https://brew.sh 安装）
+brew install python@3.12 ffmpeg node
+
+# 2. Python 环境
 python3.12 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
+
+# 3. MediaKit CLI（视频理解）
+npx @volcengine/mediakit-cli install -y
+
+# 4. 中文字体：思源宋体 Heavy，按 SIL OFL 1.1 使用
+mkdir -p local/fonts
+curl -fL -o local/fonts/SourceHanSerifSC-Heavy.otf \
+  https://github.com/adobe-fonts/source-han-serif/raw/release/OTF/SimplifiedChinese/SourceHanSerifSC-Heavy.otf
+
+# 5. 服务配置：只有这一步需要用户提供 Key
+cp -n .env.example .env.local
+python tools/check_credentials.py
 ```
+
+装完后运行下一节的离线示例，确认合成链路可用。FFmpeg 需含 `libx264`、AAC、QTRLE 编码和 `overlay`、`xfade`、`perspective`、`loudnorm` 等滤镜，Homebrew 版本已包含。文字由 Pillow 渲染，不依赖 `drawtext` 或 `subtitles`。
 
 Linux 按系统包管理器安装 Python 3.12 与 FFmpeg，然后执行相同的虚拟环境与依赖命令。Windows 准备 Python 3.12 和 FFmpeg，将 FFmpeg 的 `bin` 目录加入 PATH；在 PowerShell 用 `py -3.12 -m venv .venv` 建环境，后续把 `python` 换成 `.venv\Scripts\python.exe` 即可。
 
@@ -40,9 +55,7 @@ python tools/build_video.py --project examples/demo/project.json --work projects
 
 ## 中文字体
 
-中文标题与字幕需要支持相应文字的 TTF 或 OTF。把自己的字体放到 `local/fonts/`，修改布局中 `fonts.title.path`、`fonts.quote.path`、`fonts.subtitle.path`。仓库不分发字体包。
-
-通用布局预设路径是 `local/fonts/SourceHanSerifSC-Heavy.otf`，可从 [Adobe 思源宋体官方发布](https://github.com/adobe-fonts/source-han-serif/tree/release/OTF/SimplifiedChinese)取得该字体。保留官方 [OFL 许可](https://github.com/adobe-fonts/source-han-serif/blob/release/LICENSE.txt)。`pillow-default` 仅供英文离线教学例使用，不支持中文。
+通用布局预设路径是 `local/fonts/SourceHanSerifSC-Heavy.otf`，首次运行时由 Agent 从 [Adobe 思源宋体官方发布](https://github.com/adobe-fonts/source-han-serif/tree/release/OTF/SimplifiedChinese)下载。仓库不分发字体包。换用其他 TTF 或 OTF 时放到 `local/fonts/`，修改布局中 `fonts.title.path`、`fonts.quote.path`、`fonts.subtitle.path`。保留官方 [OFL 许可](https://github.com/adobe-fonts/source-han-serif/blob/release/LICENSE.txt)。`pillow-default` 仅供英文离线教学例使用，不支持中文。
 
 ## Agent 准备制作输入
 

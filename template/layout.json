@@ -108,8 +108,9 @@
   },
   "encode": {
     "vcodec": "libx264",
-    "crf": 18,
+    "crf": 12,
     "preset": "medium",
+    "x264_params": "fast-pskip=0:deadzone-inter=0:deadzone-intra=0",
     "acodec": "aac",
     "abitrate": "192k"
   }
