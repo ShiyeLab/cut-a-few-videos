@@ -52,7 +52,7 @@ def receive(response, partial: Path) -> tuple[list[dict], list[dict]]:
             event = json.loads(line)
             code = event.get("code")
             if code not in (0, 20000000):
-                raise RuntimeError(f"豆包试音返回 code={code}")
+                raise RuntimeError(f"豆包返回 code={code}")
             chunk = event.pop("data", None)
             if chunk:
                 audio.write(base64.b64decode(chunk, validate=True))

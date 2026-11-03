@@ -104,7 +104,12 @@ def submit(item: dict, key: str, folder: Path) -> dict:
     state = {"slug": folder.name, "purpose": item.get("purpose", ""), "request": body,
              "status": "submitting", "task_id": None}
     save(receipt_path, state)
-    code, resp = call("POST", "/v2/video_generation", key, body)
+    try:
+        code, resp = call("POST", "/v2/video_generation", key, body)
+    except (urllib.error.URLError, TimeoutError, OSError) as exc:
+        state.update(status="outcome_unknown", error_type=type(exc).__name__)
+        save(receipt_path, state)
+        raise SystemExit(f"{folder.name}: 提交未确认（{type(exc).__name__}），结果未知；不自动重发") from None
     if code != 200 or "task_id" not in resp:
         state.update(status="submit_failed", http_status=code, response=resp)
         save(receipt_path, state)
@@ -198,6 +203,10 @@ def main() -> int:
             continue
         if state and state.get("status") == "submit_failed":
             raise SystemExit(f"{item['slug']}: 上次提交失败，先人工确认，不自动重发")
+        if state and not state.get("task_id"):
+            # 提交中断时没有任务号：既不能查询，也不能静默跳过。
+            raise SystemExit(f"{item['slug']}: 上次提交结果未知（{state.get('status')}），"
+                             "先人工确认，不自动重发；确定重做后换 slug")
         if state is None and not args.poll_only:
             state = submit(item, key, folder)
         if state and state.get("task_id"):

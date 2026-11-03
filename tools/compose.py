@@ -38,15 +38,17 @@ def media_duration(path: str) -> float:
     return float(probe(path)["format"]["duration"])
 
 
-def fit_statements(src: str, dst: str, win: dict, fps: int, spec: dict) -> list[str]:
-    """一个镜头的缩放处理：cover 裁切填满 / contain 补底色 / blur 虚化背景 + 完整前景。"""
+def fit_statements(src: str, dst: str, win: dict, fps: int, spec: dict,
+                   scale: int = 1) -> list[str]:
+    """一个镜头的缩放处理：cover 裁切填满 / contain 补底色 / blur 虚化背景 + 完整前景。
+    scale 为放大画布的倍数，虚化半径随之放大，缩回后与不推近的镜头一致。"""
     w, h = win["w"], win["h"]
     fit = (spec.get("fit") or "cover").lower()
     if fit == "blur":
         return [
             f"[{src}]split=2[{dst}bg0][{dst}fg0]",
             f"[{dst}bg0]scale={w}:{h}:force_original_aspect_ratio=increase,crop={w}:{h},"
-            f"gblur=sigma=26,eq=brightness=-0.06[{dst}bg]",
+            f"gblur=sigma={26 * scale},eq=brightness=-0.06[{dst}bg]",
             f"[{dst}fg0]scale={w}:{h}:force_original_aspect_ratio=decrease[{dst}fg]",
             f"[{dst}bg][{dst}fg]overlay=(W-w)/2:(H-h)/2,setsar=1,fps={fps}[{dst}]",
         ]
@@ -143,8 +145,9 @@ def render_center(shots: list[dict], cfg: dict, duration: float, work: Path,
                        f"setpts=(PTS-STARTPTS)/{speed:.6f}[sr{n}]")
         zoom = float(shot.get("zoom") or 0) if Path(source).suffix.lower() in IMAGE_EXT else 0
         # 在较大画布上计算裁切位置，再缩回输出尺寸，避免微小推近逐像素跳动。
-        fit_win = {**win, "w": win["w"] * 4, "h": win["h"] * 4} if zoom else win
-        filters.extend(fit_statements(f"sr{n}", f"fit{n}", fit_win, fps, shot))
+        scale = 4 if zoom else 1
+        fit_win = {**win, "w": win["w"] * scale, "h": win["h"] * scale}
+        filters.extend(fit_statements(f"sr{n}", f"fit{n}", fit_win, fps, shot, scale))
         tail = f"fit{n}"
         if zoom:
             frames = max(1, round(length * fps))

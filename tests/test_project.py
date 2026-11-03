@@ -7,11 +7,14 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+import urllib.error
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
 import build_video as B
 import compose as C
+import minimax_video as M
+import stock_search as P
 from check_credentials import load_env
 from minimax_video import load_key
 
@@ -111,6 +114,40 @@ class ProjectTests(unittest.TestCase):
                 self.assertEqual(load_env(missing), {})
                 with self.assertRaisesRegex(SystemExit, "ABSENT"):
                     load_key(str(missing))
+
+    def test_interrupted_video_submission_is_reported_not_skipped(self):
+        with tempfile.TemporaryDirectory() as temp:
+            folder = Path(temp)
+            spec = folder / "spec.json"
+            spec.write_text(json.dumps({"items": [{"slug": "window", "prompt": "无字空镜"}]}), encoding="utf-8")
+            (folder / "env").write_text("MINIMAX_API_KEY=MOCK_NOT_A_REAL_KEY\n", encoding="utf-8")
+            argv = ["minimax_video.py", "--spec", str(spec), "--env", str(folder / "env"),
+                    "--out", str(folder / "ai")]
+            with patch.object(sys, "argv", argv), \
+                    patch.object(M.urllib.request, "urlopen", side_effect=urllib.error.URLError("down")) as send:
+                with self.assertRaisesRegex(SystemExit, "结果未知"):
+                    M.main()
+                receipt = json.loads((folder / "ai" / "window" / "receipt.json").read_text(encoding="utf-8"))
+                self.assertEqual(receipt["status"], "outcome_unknown")
+                with self.assertRaisesRegex(SystemExit, "结果未知"):
+                    M.main()
+                self.assertEqual(send.call_count, 1)
+
+    def test_stock_needs_get_separate_folders(self):
+        self.assertNotEqual(P.slug("安静窗户"), P.slug("办公室打字"))
+        self.assertEqual(P.slug("quiet window!"), "quiet-window")
+        with tempfile.TemporaryDirectory() as temp:
+            folder = Path(temp)
+            brief = folder / "brief.json"
+            brief.write_text(json.dumps({"shots": [
+                {"type": "stock", "need": "窗边 光线", "query": "a"},
+                {"type": "stock", "need": "窗边-光线", "query": "b"}]}), encoding="utf-8")
+            (folder / "env").write_text("PEXELS_API_KEY=MOCK_NOT_A_REAL_KEY\n", encoding="utf-8")
+            argv = ["stock_search.py", "--brief", str(brief), "--env", str(folder / "env"),
+                    "--out", str(folder / "stock")]
+            with patch.object(sys, "argv", argv), patch.object(P, "api_get") as search:
+                self.assertEqual(P.main(), 2)
+                search.assert_not_called()
 
     def test_four_audio_combinations_have_full_length(self):
         with tempfile.TemporaryDirectory() as temp:

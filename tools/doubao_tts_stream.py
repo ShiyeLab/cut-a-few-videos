@@ -129,6 +129,15 @@ def main() -> int:
         state.update(status="http_failed", http_status=exc.code)
         save(receipt_path, state)
         raise SystemExit(f"豆包流式配音 HTTP {exc.code}；未自动重试") from None
+    except RuntimeError as exc:
+        # 服务明确返回错误码：记录原因，不当作结果未知。
+        state.update(status="provider_failed", error=str(exc)[:300])
+        save(receipt_path, state)
+        raise SystemExit(f"豆包流式配音失败：{exc}；未自动重试") from None
+    except ValueError as exc:
+        state.update(status="invalid_response", error_type=type(exc).__name__, error=str(exc)[:300])
+        save(receipt_path, state)
+        raise SystemExit(f"豆包流式配音响应无法解析（{type(exc).__name__}）；未自动重试") from None
     except (urllib.error.URLError, TimeoutError, OSError) as exc:
         got = partial.stat().st_size if partial.exists() else 0
         state.update(status="unknown", error_type=type(exc).__name__, partial_bytes=got)

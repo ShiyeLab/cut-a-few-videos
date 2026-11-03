@@ -4,13 +4,16 @@ import base64
 import io
 import json
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageStat
 
 import compose as C
+import doubao_tts_stream as T
 from doubao_tts import subtitles
 from doubao_preview import make_payload, receive
 
@@ -46,6 +49,48 @@ class VideoFixes(unittest.TestCase):
                 jumps = [b[axis] - a[axis] for a, b in zip(centers, centers[1:])]
                 self.assertLess(max(abs(step) for step in jumps), 0.45)
                 self.assertLess(max(jumps), 0.15)
+
+    def test_blur_background_is_equally_soft_with_zoom(self):
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory)
+            image = Image.new("RGB", (480, 180), "white")
+            draw = ImageDraw.Draw(image)
+            for x in range(0, 480, 12):
+                draw.rectangle((x, 0, x + 5, 180), fill="black")
+            source = folder / "stripes.png"
+            image.save(source)
+            cfg = {"canvas": {"fps": 30}, "bands": {"center": {"w": 320, "h": 340}}}
+            spread = []
+            for zoom in (0, 0.001):
+                work = folder / f"zoom{zoom}"
+                work.mkdir()
+                video = C.render_center([{"asset": str(source), "start": 0, "end": 1,
+                                          "fit": "blur", "zoom": zoom}], cfg, 1, work, 0)
+                raw = subprocess.check_output(["ffmpeg", "-v", "error", "-i", str(video), "-frames:v", "1",
+                                               "-f", "rawvideo", "-pix_fmt", "gray", "-"])
+                # 只看前景上方的虚化背景区。
+                band = Image.frombytes("L", (320, 340), raw).crop((0, 0, 320, 80))
+                spread.append(ImageStat.Stat(band).stddev[0])
+            self.assertLess(abs(spread[1] - spread[0]), 6, spread)
+
+    def test_stream_provider_error_is_recorded(self):
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory)
+            (folder / "script.txt").write_text("你好。", encoding="utf-8")
+            (folder / "env").write_text("VOLCENGINE_TTS_API_KEY=MOCK_NOT_A_REAL_KEY\n", encoding="utf-8")
+            argv = ["doubao_tts_stream.py", "--script", str(folder / "script.txt"), "--work",
+                    str(folder / "voice"), "--speaker", "mock-voice", "--env", str(folder / "env")]
+            response = io.BytesIO(b'{"code": 45000001}\n')
+            with patch.object(sys, "argv", argv), \
+                    patch.object(T.urllib.request, "urlopen", return_value=response) as send:
+                with self.assertRaisesRegex(SystemExit, "45000001"):
+                    T.main()
+                state = json.loads((folder / "voice" / "tts_receipt.json").read_text(encoding="utf-8"))
+                self.assertEqual(state["status"], "provider_failed")
+                self.assertIn("45000001", state["error"])
+                with self.assertRaisesRegex(SystemExit, "provider_failed"):
+                    T.main()
+                self.assertEqual(send.call_count, 1)
 
     def test_direction_is_separate_from_spoken_text(self):
         payload = make_payload("你好。", "mock-voice", "自然讲述", -4)["req_params"]

@@ -30,7 +30,8 @@ from check_credentials import load_env
 
 
 def slug(text: str) -> str:
-    return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")[:40] or "shot"
+    # 保留中文等文字字符，避免不同中文需求都落到同一个目录。
+    return re.sub(r"[\W_]+", "-", text.lower()).strip("-")[:40] or "shot"
 
 
 def api_get(key: str, params: dict) -> dict:
@@ -82,10 +83,15 @@ def main() -> int:
     out_root = ROOT / args.out
     session = {"license": LICENSE_URL, "source": "pexels", "shots": []}
 
-    for shot in brief["shots"]:
-        if shot.get("type") != "stock":
-            continue
-        folder = out_root / slug(shot["need"])
+    shots = [s for s in brief["shots"] if s.get("type") == "stock"]
+    folders = [slug(s["need"]) for s in shots]
+    clashes = sorted({f for f in folders if folders.count(f) > 1})
+    if clashes:
+        print(f"多个 need 对应同一目录 {clashes}，会互相覆盖来源记录；请改成不同的 need", file=sys.stderr)
+        return 2
+
+    for shot, name in zip(shots, folders):
+        folder = out_root / name
         folder.mkdir(parents=True, exist_ok=True)
         data = api_get(key, {"query": shot["query"], "per_page": args.per_shot,
                              "orientation": "portrait", "size": "medium"})
