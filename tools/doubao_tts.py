@@ -84,7 +84,7 @@ def main() -> int:
     args = ap.parse_args()
     work = Path(args.work)
     work.mkdir(parents=True, exist_ok=True)
-    text = "\n".join(s.strip() for s in Path(args.script).read_text().splitlines()
+    text = "\n".join(s.strip() for s in Path(args.script).read_text(encoding="utf-8").splitlines()
                      if s.strip() and not s.lstrip().startswith("#"))
     params = {"text": text, "speaker": args.speaker,
               "audio_params": {"format": "mp3", "sample_rate": 48000,
@@ -94,7 +94,7 @@ def main() -> int:
     fingerprint = hashlib.sha256(json.dumps(config, ensure_ascii=False, sort_keys=True).encode()).hexdigest()
     state_file = work / "tts_receipt.json"
     if state_file.exists():
-        state = json.loads(state_file.read_text())
+        state = json.loads(state_file.read_text(encoding="utf-8"))
         if state["input_sha256"] != fingerprint:
             raise SystemExit("配音输入已改变，请使用新版本目录，避免误用旧声音")
         if state["status"] == "complete":

@@ -15,14 +15,14 @@ from pathlib import Path
 
 def probe_duration(path: str) -> float:
     out = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration",
-                          "-of", "csv=p=0", path], capture_output=True, text=True).stdout
+                          "-of", "csv=p=0", path], capture_output=True, text=True, encoding="utf-8", errors="replace").stdout
     return float(out.strip())
 
 
 def silences(path: str) -> list[tuple[float, float]]:
     proc = subprocess.run(["ffmpeg", "-hide_banner", "-i", path, "-af",
                            "silencedetect=noise=-40dB:d=0.16", "-f", "null", "-"],
-                          capture_output=True, text=True)
+                          capture_output=True, text=True, encoding="utf-8", errors="replace")
     starts = [float(x) for x in re.findall(r"silence_start: (-?[\d.]+)", proc.stderr)]
     ends = [float(x) for x in re.findall(r"silence_end: ([\d.]+)", proc.stderr)]
     return list(zip(starts, ends))
@@ -30,7 +30,7 @@ def silences(path: str) -> list[tuple[float, float]]:
 
 def volume(path: str) -> tuple[float, float]:
     proc = subprocess.run(["ffmpeg", "-hide_banner", "-i", path, "-af", "volumedetect",
-                           "-f", "null", "-"], capture_output=True, text=True)
+                           "-f", "null", "-"], capture_output=True, text=True, encoding="utf-8", errors="replace")
     mean = re.search(r"mean_volume: (-?[\d.]+) dB", proc.stderr)
     peak = re.search(r"max_volume: (-?[\d.]+) dB", proc.stderr)
     return (float(mean.group(1)) if mean else float("nan"),

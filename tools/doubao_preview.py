@@ -80,8 +80,8 @@ def main() -> int:
     ap.add_argument("--work", required=True)
     ap.add_argument("--env", default=".env.local")
     args = ap.parse_args()
-    text = Path(args.script).read_text().strip()
-    direction = Path(args.direction).read_text().strip() if args.direction else None
+    text = Path(args.script).read_text(encoding="utf-8").strip()
+    direction = Path(args.direction).read_text(encoding="utf-8").strip() if args.direction else None
     payload = make_payload(text, args.speaker, direction, args.rate)
     fingerprint = hashlib.sha256(json.dumps(payload, ensure_ascii=False, sort_keys=True).encode()).hexdigest()
     work = Path(args.work)
@@ -89,7 +89,7 @@ def main() -> int:
     receipt = work / "preview_receipt.json"
     output = work / "voice.mp3"
     if receipt.exists():
-        state = json.loads(receipt.read_text())
+        state = json.loads(receipt.read_text(encoding="utf-8"))
         if state.get("input_sha256") != fingerprint:
             raise SystemExit("试音参数已改变，请使用新的试音目录")
         if state.get("status") == "complete" and output.exists():

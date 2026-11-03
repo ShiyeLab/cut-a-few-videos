@@ -108,6 +108,7 @@ def main() -> int:
     parser.add_argument("--prepare-only", action="store_true")
     parser.add_argument("--no-voice", action="store_true")
     parser.add_argument("--no-music", action="store_true")
+    parser.add_argument("--no-jianying", action="store_true", help="合成后不导出剪映草稿")
     args = parser.parse_args()
     project = read_json(args.project)
     work = Path(args.work)
@@ -122,7 +123,23 @@ def main() -> int:
         save(work / "verify.json", result["verification"])
         save(work / "result.json", result)
         print(json.dumps({"output": result["output"], "duration": result["duration"]}))
+        if not args.no_jianying:
+            print(export_draft(work))
     return 0
+
+
+def export_draft(work: Path) -> str:
+    """MP4 完成后导出剪映草稿；找不到剪映或导出失败都不影响已完成的成片。"""
+    try:
+        import jianying_draft as J
+    except ImportError as exc:
+        return f"未导出剪映草稿：缺少依赖（{exc.name}），按 requirements.txt 安装后可用 jianying_draft.py --work 补导出"
+    if not J.DEFAULT_ROOT.is_dir():
+        return "未找到剪映草稿目录，未导出剪映草稿"
+    try:
+        return J.export(work, J.DEFAULT_ROOT)
+    except (ValueError, OSError) as exc:
+        return f"剪映草稿导出失败，成片不受影响：{exc}"
 
 
 if __name__ == "__main__":

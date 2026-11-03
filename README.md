@@ -57,6 +57,14 @@ python tools/build_video.py --project examples/demo/project.json --work projects
 
 得到 `projects/demo/v1/video.mp4`：8 秒、1080×1920、30 fps，包含匀速推近与平移、视频选段、推入与闪白转场、贴片、字幕和合成音。输入由程序生成，不需要 Key。教学例的几何底图用于离线演示；自己的视频按上面的生图流程准备贴片。
 
+## 导出可编辑剪映草稿
+
+在装有剪映的 Mac 或 Windows 上运行 `build_video.py`，合成后会自动在剪映草稿目录生成这条视频的草稿，打开剪映即可在首页看到：中央窗画面、底图、标题、底部文字、字幕和配音各自成轨，文字可以直接改，素材可以换。草稿和 MP4 用同一份时间轴；镜头之间是硬切，不带运镜与转场，过场、配乐和字体在剪映里自己加。
+
+合成时剪映正开着，草稿照常生成，只是暂不登记首页；退出剪映后运行 `python tools/jianying_draft.py --register` 补上。不需要草稿时给 `build_video.py` 加 `--no-jianying`；给以前的输出目录补导出用 `python tools/jianying_draft.py --work <输出目录>`。
+
+首次使用可先运行 `python tools/jianying_smoke.py` 生成一份 6 秒测试草稿，确认本机剪映能打开。首页登记、仅生成文件的用法与验收步骤见[验证说明](docs/validation.md#剪映草稿)。
+
 ## 文档
 
 | 文档 | 用途 |
@@ -69,6 +77,10 @@ python tools/build_video.py --project examples/demo/project.json --work projects
 | [离线教学例](examples/demo/README.md) | 无需外部素材的完整运行例子 |
 | [检查与交付](docs/validation.md) | 自动检查与实际看片 |
 | [AI 执行说明](AGENTS.md) | 给制作 Agent 的工作要求 |
-| [第三方依赖](THIRD_PARTY.md) | 字体、Pillow 与 FFmpeg |
+| [开源依赖与署名](THIRD_PARTY.md) | 实际使用的项目、用途、代码入口与许可证 |
+
+## 开源致谢
+
+本项目使用 [FFmpeg](https://ffmpeg.org/) 处理音视频、[Pillow](https://github.com/python-pillow/Pillow) 绘制文字与图片、[MediaKit CLI](https://github.com/volcengine/mediakit-cli) 接入视频理解、[pyJianYingDraft](https://github.com/GuanYixuan/pyJianYingDraft) 生成可编辑剪映草稿。感谢各项目作者与贡献者；实际调用入口和许可证见[署名说明](THIRD_PARTY.md)。
 
 自己的素材、声音、字体、回执与成片放在 `projects/`、`local/`，默认不进入 Git。维护者：[ShiyeLab](https://github.com/ShiyeLab)。

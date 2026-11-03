@@ -4,7 +4,7 @@
 
 ## 首次运行由 Agent 完成
 
-用户 clone 项目后不需要自己装任何东西。Agent 首次运行时在 macOS 上执行以下步骤，已存在的项跳过；需要输入系统密码或网络失败时再请用户处理。
+用户 clone 项目后不需要自己装任何东西。Agent 首次运行时按系统执行以下步骤（macOS 见本节，Windows 见下方 PowerShell 部分），已存在的项跳过；需要输入系统密码或网络失败时再请用户处理。
 
 ```sh
 # 1. 命令行依赖（未装 Homebrew 时先按 https://brew.sh 安装）
@@ -30,7 +30,35 @@ python tools/check_credentials.py
 
 装完后运行下一节的离线示例，确认合成链路可用。FFmpeg 需含 `libx264`、AAC、QTRLE 编码和 `overlay`、`xfade`、`perspective`、`loudnorm` 等滤镜，Homebrew 版本已包含。文字由 Pillow 渲染，不依赖 `drawtext` 或 `subtitles`。
 
-Linux 按系统包管理器安装 Python 3.12 与 FFmpeg，然后执行相同的虚拟环境与依赖命令。Windows 准备 Python 3.12 和 FFmpeg，将 FFmpeg 的 `bin` 目录加入 PATH；在 PowerShell 用 `py -3.12 -m venv .venv` 建环境，后续把 `python` 换成 `.venv\Scripts\python.exe` 即可。
+Windows 在 PowerShell 中执行以下步骤，已存在的项跳过：
+
+```powershell
+# 1. 命令行依赖；装完后重新打开 PowerShell，使 PATH 生效
+winget install -e --id Python.Python.3.12
+winget install -e --id Gyan.FFmpeg
+winget install -e --id OpenJS.NodeJS.LTS
+
+# 2. Python 环境
+py -3.12 -m venv .venv
+.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+
+# 3. MediaKit CLI（视频理解）
+npx @volcengine/mediakit-cli install -y
+
+# 4. 中文字体：思源宋体 Heavy，按 SIL OFL 1.1 使用
+New-Item -ItemType Directory -Force local\fonts | Out-Null
+curl.exe -fL -o local\fonts\SourceHanSerifSC-Heavy.otf `
+  https://github.com/adobe-fonts/source-han-serif/raw/release/OTF/SimplifiedChinese/SourceHanSerifSC-Heavy.otf
+
+# 5. 服务配置：只有这一步需要用户提供 Key
+if (-not (Test-Path .env.local)) { Copy-Item .env.example .env.local }
+python tools/check_credentials.py
+```
+
+`Activate.ps1` 被执行策略拦截时，先运行 `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`，或直接用 `.venv\Scripts\python.exe` 代替 `python`。winget 连不上源时，可从 FFmpeg 官网列出的 Windows 构建下载解压，把其中的 `bin` 目录加入 PATH。本文其余命令在 Windows 上同样适用，`python3` 一律写作 `python`。
+
+Linux 按系统包管理器安装 Python 3.12 与 FFmpeg，然后执行相同的虚拟环境与依赖命令。
 
 ## 先跑离线示例
 
