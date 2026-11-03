@@ -100,7 +100,7 @@ def _sample(src: str, x: str, y: str) -> str:
 
 
 def xfade_options(name: str) -> str:
-    """转场参数。内置推拉、闪白为匀速或突跳，这里统一改为平滑起停的自定义曲线。"""
+    """转场参数。推入与闪白使用平滑起停的自定义曲线；FFmpeg 内置版本起止生硬。"""
     if name == "fade":
         return "transition=fade"
     if name in SOFT:
@@ -144,7 +144,7 @@ def load_shots(args: argparse.Namespace, duration: float) -> list[dict]:
         if not Path(s["asset"]).exists():
             raise SystemExit(f"第 {i + 1} 个镜头素材不存在: {s['asset']}")
         if s.get("zoom"):
-            raise SystemExit(f"第 {i + 1} 个镜头的 zoom 已停用：改用 move（{'/'.join(MOVES)}），"
+            raise SystemExit(f"第 {i + 1} 个镜头不支持 zoom：运镜请用 move（{'/'.join(MOVES)}），"
                              "速度由项目的 move_rate 统一")
         if s.get("move") and s["move"] not in MOVES:
             raise SystemExit(f"第 {i + 1} 个镜头的 move 只能是 {'/'.join(MOVES)}")

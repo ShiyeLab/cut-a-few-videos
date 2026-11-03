@@ -147,7 +147,7 @@ class VideoFixes(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             source = Path(directory) / "a.png"
             Image.new("RGB", (W, H)).save(source)
-            for shot, message in [({"zoom": 0.03}, "zoom 已停用"), ({"move": "spin"}, "move"),
+            for shot, message in [({"zoom": 0.03}, "不支持 zoom"), ({"move": "spin"}, "move"),
                                   ({"focus_y": 2}, "focus_y")]:
                 shots_file = Path(directory) / "shots.json"
                 shots_file.write_text(json.dumps([{"asset": str(source), "end": 2, **shot}]), encoding="utf-8")
