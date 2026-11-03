@@ -133,6 +133,23 @@ class ProjectTests(unittest.TestCase):
                     M.main()
                 self.assertEqual(send.call_count, 1)
 
+    def test_expired_video_task_stops_polling(self):
+        with tempfile.TemporaryDirectory() as temp:
+            folder = Path(temp)
+            (folder / "receipt.json").write_text(json.dumps({"status": "queued", "task_id": "mock-1"}),
+                                                 encoding="utf-8")
+            with patch.object(M, "call", return_value=(200, {"task": {"status": "expired"}})) as query, \
+                    patch.object(M.time, "sleep") as wait:
+                self.assertEqual(M.poll(folder, "MOCK_NOT_A_REAL_KEY")["status"], "expired")
+                self.assertEqual(query.call_count, 1)
+                wait.assert_not_called()
+
+    def test_stock_prefers_files_wide_enough_for_center_window(self):
+        files = [{"file_type": "video/mp4", "width": w, "height": h}
+                 for w, h in [(540, 960), (720, 1280), (1080, 1920), (2160, 3840)]]
+        self.assertEqual(P.pick_file({"video_files": files})["width"], 1080)
+        self.assertEqual(P.pick_file({"video_files": files[:2]})["width"], 720)
+
     def test_stock_needs_get_separate_folders(self):
         self.assertNotEqual(P.slug("安静窗户"), P.slug("办公室打字"))
         self.assertEqual(P.slug("quiet window!"), "quiet-window")

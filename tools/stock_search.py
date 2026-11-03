@@ -41,14 +41,17 @@ def api_get(key: str, params: dict) -> dict:
         return json.loads(resp.read())
 
 
-def pick_file(video: dict, want_portrait: bool) -> dict | None:
-    """挑一个分辨率够用、体积适中的 mp4（竖屏窗优先竖屏或方屏）。"""
+CENTER_W = 1080  # 中央窗宽；低于此宽度的竖屏素材铺满窗口时会被放大变糊
+
+
+def pick_file(video: dict) -> dict | None:
+    """挑宽度够铺满中央窗的最小 mp4；都不够宽时取最大的一个。"""
     files = [f for f in video.get("video_files", []) if f.get("file_type") == "video/mp4"]
     if not files:
         return None
     files.sort(key=lambda f: (f.get("width") or 0) * (f.get("height") or 0))
-    good = [f for f in files if (f.get("width") or 0) >= 720]
-    return (good or files)[-1] if not want_portrait else (good or files)[0] if good else files[-1]
+    wide = [f for f in files if (f.get("width") or 0) >= CENTER_W]
+    return wide[0] if wide else files[-1]
 
 
 def download(url: str, dest: Path) -> None:
@@ -97,7 +100,7 @@ def main() -> int:
                              "orientation": "portrait", "size": "medium"})
         saved = []
         for v in data.get("videos", []):
-            f = pick_file(v, want_portrait=True)
+            f = pick_file(v)
             if not f:
                 continue
             p = folder / f"{v['id']}.mp4"

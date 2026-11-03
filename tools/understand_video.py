@@ -38,6 +38,18 @@ def request_for(videos: list[str], prompt: str, level: str) -> dict:
             "level": level, "local_files": local_files}
 
 
+class CliFailure(ValueError):
+    """CLI 以非零退出码给出 success=false 的 JSON；data 为已脱敏的返回内容。"""
+
+    def __init__(self, data: dict):
+        error = data.get("error")
+        if isinstance(error, dict):
+            error = "：".join(str(error[k]) for k in ("code", "message") if error.get(k))
+        self.data = data
+        self.detail = str(error or "未说明原因")
+        super().__init__(f"MediaKit 返回错误：{self.detail}")
+
+
 def call_cli(cli: str, arguments: list[str], key: str) -> dict:
     env = dict(os.environ)
     # 本项目显式配置优先；缺少配置时不会走到这里，也不读取宿主或其他项目的 Key。
@@ -48,12 +60,17 @@ def call_cli(cli: str, arguments: list[str], key: str) -> dict:
                                 text=True, timeout=120)
     except (OSError, subprocess.TimeoutExpired):
         raise ValueError("MediaKit 调用中断；保留任务状态，未自动重发。") from None
-    if result.returncode:
-        raise ValueError("MediaKit 返回错误；检查服务权限与配置。未输出含凭证风险的原始日志。")
     try:
         data = json.loads(result.stdout.replace(key, "[REDACTED]"))
     except (ValueError, TypeError):
-        raise ValueError("MediaKit 未返回有效 JSON；保留状态，不自动重发。") from None
+        data = None
+    if result.returncode:
+        # 失败时 CLI 在标准输出给出 success=false 的 JSON；只采用这份结构化结果，不输出原始日志。
+        if isinstance(data, dict) and data.get("success") is False:
+            raise CliFailure(data)
+        raise ValueError("MediaKit 返回错误；检查服务权限与配置。未输出含凭证风险的原始日志。")
+    if data is None:
+        raise ValueError("MediaKit 未返回有效 JSON；保留状态，不自动重发。")
     if not isinstance(data, dict):
         raise ValueError("MediaKit 返回格式不符合任务协议。")
     return data
@@ -72,6 +89,8 @@ def run(request: dict | None, work: Path, env_file: Path, cli: str) -> str:
             return "completed"
         if receipt["status"] in {"failed", "canceled", "cancelled"}:
             raise ValueError("已有任务失败或取消，请先检查本地回执；未自动重发。")
+        if receipt["status"] == "submit_failed":
+            raise ValueError("上次提交被服务拒绝，未创建任务；排除原因后使用新的理解目录。")
         if not receipt.get("task_id"):
             raise ValueError("已有提交结果未知，请核对服务端任务；未自动重发。")
     elif request is None:
@@ -98,6 +117,14 @@ def run(request: dict | None, work: Path, env_file: Path, cli: str) -> str:
             task_id = response.get("task_id")
             if not isinstance(task_id, str) or not task_id.strip():
                 raise ValueError("提交未返回任务号，结果未知；请核对服务端任务。")
+        except CliFailure as exc:
+            if exc.data.get("task_id"):
+                receipt["status"] = "outcome_unknown"
+                save(receipt_path, receipt)
+                raise
+            receipt["status"] = "submit_failed"
+            save(receipt_path, receipt)
+            raise ValueError(f"MediaKit 拒绝提交：{exc.detail}；未创建任务。") from None
         except ValueError:
             receipt["status"] = "outcome_unknown"
             save(receipt_path, receipt)
@@ -106,7 +133,13 @@ def run(request: dict | None, work: Path, env_file: Path, cli: str) -> str:
         save(receipt_path, receipt)
         return "queued"
 
-    response = call_cli(executable, ["shared", "query-task", "--task-id", receipt["task_id"]], key)
+    try:
+        response = call_cli(executable, ["shared", "query-task", "--task-id", receipt["task_id"]], key)
+    except CliFailure as exc:
+        # 带终态的失败是任务结果，照常记录；否则只是本次查询出错，任务保持原状态。
+        if exc.data.get("status") not in {"failed", "canceled", "cancelled"}:
+            raise ValueError(f"查询原任务出错：{exc.detail}；稍后继续查询。") from None
+        response = exc.data
     if response.get("task_id") != receipt["task_id"]:
         raise ValueError("查询返回的任务号不匹配，未采用结果。")
     status = response.get("status")
@@ -121,7 +154,8 @@ def run(request: dict | None, work: Path, env_file: Path, cli: str) -> str:
     receipt["status"] = status
     save(receipt_path, receipt)
     if status in {"failed", "canceled", "cancelled"}:
-        raise ValueError("视频理解任务失败或取消，请检查 result.json；未自动重发。")
+        reason = f"（{CliFailure(response).detail}）" if response.get("error") else ""
+        raise ValueError(f"视频理解任务失败或取消{reason}，请检查 result.json；未自动重发。")
     return status
 
 

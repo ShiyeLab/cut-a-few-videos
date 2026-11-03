@@ -216,8 +216,17 @@ def render_center(shots: list[dict], cfg: dict, duration: float, work: Path,
             speed = float(shot.get("speed", 1.0))
             if not 0.5 <= speed <= 2.0:
                 raise SystemExit("镜头速度必须在 0.5 至 2 倍之间")
-            if cin < 0 or cin + length * speed > media_duration(source) + TOL:
+            info = probe(source)
+            if cin < 0 or cin + length * speed > float(info["format"]["duration"]) + TOL:
                 raise SystemExit(f"镜头 {n + 1} 的源区间（含转场）超出原片")
+            if speed < 1:
+                # 慢放后每秒源帧数低于成片帧率时只能重复帧，画面会一顿一顿。
+                video = next(s for s in info["streams"] if s["codec_type"] == "video")
+                num, den = video["avg_frame_rate"].split("/")
+                source_fps = float(num) / float(den) if float(den) else 0.0
+                if source_fps * speed < fps * 0.99:
+                    raise SystemExit(f"镜头 {n + 1} 慢放到 {speed:g} 倍需要至少 {fps / speed:g}fps 的素材，"
+                                     f"原片约 {source_fps:.0f}fps；改用高帧率素材或原速")
             inputs += ["-threads", "2", "-i", source]
         filters.append(f"[{n}:v]trim=start={cin:.6f}:duration={length * speed:.6f},"
                        f"setpts=(PTS-STARTPTS)/{speed:.6f}[sr{n}]")

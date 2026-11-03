@@ -74,6 +74,47 @@ class UnderstandingTests(unittest.TestCase):
             self.assertEqual(call.call_count, 3)
             self.assertEqual(call.call_args.args[1][-1], "mock-task-1")
 
+    def cli_outputs(self, *outputs):
+        # 按 CLI 约定模拟：失败时退出码 1，并在标准输出给出带 success=false 的 JSON。
+        return [subprocess.CompletedProcess([], code, json.dumps(body, ensure_ascii=False), "")
+                for code, body in outputs]
+
+    def test_failed_task_reported_by_cli_exit_code_is_recorded(self):
+        outputs = self.cli_outputs(
+            (0, {"task_id": "mock-task-1"}),
+            (1, {"task_id": "mock-task-1", "status": "failed", "success": False,
+                 "error": {"code": "VideoDecodeFailed", "message": "视频无法解码"}}))
+        with patch.object(U.subprocess, "run", side_effect=outputs) as process:
+            self.run_job()
+            with self.assertRaisesRegex(ValueError, "视频无法解码"):
+                self.run_job(False)
+            with self.assertRaisesRegex(ValueError, "失败或取消"):
+                self.run_job(False)
+            self.assertEqual(process.call_count, 2)
+        self.assertEqual(json.loads((self.work / "receipt.json").read_text())["status"], "failed")
+        self.assertIn("VideoDecodeFailed", (self.work / "result.json").read_text(encoding="utf-8"))
+
+    def test_rejected_submission_is_not_reported_as_unknown(self):
+        outputs = self.cli_outputs((1, {"success": False, "error": "跨服务授权未完成"}))
+        with patch.object(U.subprocess, "run", side_effect=outputs) as process:
+            with self.assertRaisesRegex(ValueError, "拒绝提交：跨服务授权未完成"):
+                self.run_job()
+            with self.assertRaisesRegex(ValueError, "被服务拒绝"):
+                self.run_job()
+            self.assertEqual(process.call_count, 1)
+        self.assertEqual(json.loads((self.work / "receipt.json").read_text())["status"], "submit_failed")
+
+    def test_query_error_without_terminal_status_keeps_task_pending(self):
+        outputs = self.cli_outputs((0, {"task_id": "mock-task-1"}),
+                                   (1, {"task_id": "mock-task-1", "success": False, "error": "HTTP 503"}),
+                                   (0, {"task_id": "mock-task-1", "status": "running"}))
+        with patch.object(U.subprocess, "run", side_effect=outputs):
+            self.run_job()
+            with self.assertRaisesRegex(ValueError, "HTTP 503"):
+                self.run_job(False)
+            self.assertEqual(json.loads((self.work / "receipt.json").read_text())["status"], "queued")
+            self.assertEqual(self.run_job(False), "running")
+
     def test_changed_source_or_goal_cannot_reuse_old_analysis(self):
         with patch.object(U, "call_cli", return_value={"task_id": "mock-task-1"}) as call:
             self.run_job()

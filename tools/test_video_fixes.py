@@ -143,6 +143,21 @@ class VideoFixes(unittest.TestCase):
                 jolts = [abs(b - a) / peak for a, b in zip(change, change[1:])]
                 self.assertLess(max(jolts), 0.6, (name, [round(c, 1) for c in change]))
 
+    def test_slow_motion_needs_high_frame_rate_source(self):
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory)
+            for rate in (30, 60):
+                C.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i",
+                       f"testsrc2=size={W}x{H}:rate={rate}:duration=3", "-c:v", "libx264",
+                       "-pix_fmt", "yuv420p", str(folder / f"r{rate}.mp4")], "测试素材")
+            shot = {"start": 0, "end": 2, "speed": 0.5}
+            with self.assertRaisesRegex(SystemExit, "慢放"):
+                C.render_center([{**shot, "asset": str(folder / "r30.mp4")}], CFG, 2, folder, 0)
+            frames = gray_frames(C.render_center([{**shot, "asset": str(folder / "r60.mp4")}],
+                                                 CFG, 2, folder, 0))
+            repeats = sum(a == b for a, b in zip(frames, frames[1:]))
+            self.assertEqual(repeats, 0)
+
     def test_unknown_move_or_transition_is_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
             source = Path(directory) / "a.png"

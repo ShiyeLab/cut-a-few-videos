@@ -120,10 +120,13 @@ def submit(item: dict, key: str, folder: Path) -> dict:
     return state
 
 
+TERMINAL = ("succeeded", "failed", "cancelled", "expired")  # 到终态即停止查询
+
+
 def poll(folder: Path, key: str, timeout_s: int = 900) -> dict:
     receipt_path = folder / "receipt.json"
     state = json.loads(receipt_path.read_text())
-    if state.get("status") in ("succeeded", "failed", "cancelled"):
+    if state.get("status") in TERMINAL:
         return state
     if not state.get("task_id"):
         return state
@@ -142,7 +145,7 @@ def poll(folder: Path, key: str, timeout_s: int = 900) -> dict:
             state["last_response"] = {"model": task.get("model"), "duration": task.get("duration"),
                                       "resolution": task.get("resolution"), "ratio": task.get("ratio"),
                                       "usage": task.get("usage")}
-            if status in ("succeeded", "failed", "cancelled"):
+            if status in TERMINAL:
                 save(receipt_path, state)
                 return state
         time.sleep(8)
