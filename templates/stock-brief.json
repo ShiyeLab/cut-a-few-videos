@@ -2,9 +2,9 @@
   "shots": [
     {
       "type": "stock",
-      "need": "quiet-window",
-      "query": "sunlight curtain room",
-      "requirement": "光线穿过窗帘，有平稳连续的微小动作；无文字、书本或明显产品。查看整段，核对中央裁切后主体与前后切镜。"
+      "need": "phone-pause",
+      "query": "asian woman stops scrolling phone",
+      "requirement": "亚洲面孔的年轻女性看手机时手指停住、目光停留，动作连续；画面中无可读外文、招牌或明显产品。查看整段，核对人物与场景符合中文内容语境、中央裁切后主体完整、与前后切镜衔接。"
     }
   ]
 }

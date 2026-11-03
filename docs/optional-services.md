@@ -52,6 +52,8 @@ python tools/seedream_image.py --prompt projects/my-video/poster-prompt.txt \
 
 结果保存为 `poster-v1/poster.png`，同时保存请求正文与状态回执。把该图片路径填入 `band_art`，由同一张海报裁出上下条带。底图不得带文字、印章、logo 或边框；修改标题只需重新排字。
 
+同一工具也用来生成空镜静帧：`--size` 设为方形（如 `2048x2048`），每张用新的结果目录，图片作为镜头素材写入 `scenes.json`，由 `move` 提供运镜。
+
 同参数且图片完整时复用结果；提示词或参数改变时使用新目录。请求中断、返回错误或图片无法读取时保留状态，不自动再次提交。Agent 检查回执后，在已授权范围内决定如何继续。
 
 ## 豆包配音
@@ -92,6 +94,8 @@ python tools/doubao_tts.py --script projects/my-video/script.txt \
 
 使用 `MINIMAX_API_KEY`，站点为 `https://api.minimaxi.com`，模型为 `MiniMax-H3`。配置须与该站点匹配。
 
+MiniMax 只用于关键镜头。一批成片共用一个空镜池，写在同一个规格文件里，默认整批最多 4 条，同一条最多用在两条成片里；分辨率保持 768P。
+
 Agent 复制[空镜模板](../templates/ai-video.json)，保存到本条目录，用新的 `slug` 标识每个镜头。模板只示范提示词的写法，画面按[制作流程](../methods/制作流程.md#4-选镜头与补画面)的构思与提示词顺序为本条重新设计，不沿用示例内容。`ratio` 保持 `1:1`，与接近方形的中央窗一致，不改成 9:16。新环境镜头默认无手、无书、无文字；是否出现人物按内容决定。
 
 ```sh
@@ -107,11 +111,11 @@ python tools/minimax_video.py --spec projects/my-video/ai-video.json --out proje
 
 ## Pexels 候选检索
 
-需要补充实拍画面时，可用 `PEXELS_API_KEY` 调用 [Pexels 视频 API](https://www.pexels.com/api/documentation/)。Agent 按[检索需求模板](../templates/stock-brief.json)填写可见动作与环境，保存到本条目录：
+需要补充实拍画面时，可用 `PEXELS_API_KEY` 调用 [Pexels 视频 API](https://www.pexels.com/api/documentation/)。Agent 按[检索需求模板](../templates/stock-brief.json)填写具体的人和动作，不用氛围词检索，保存到本条目录：
 
 ```sh
 python tools/stock_search.py --brief projects/my-video/stock-brief.json \
   --per-shot 2 --out projects/my-video/stock
 ```
 
-工具按竖屏筛选候选，下载 MP4，抽取 1 秒处图片，记录来源页面、作者、素材编号和许可页。候选不会自动写入镜头表；采用前完整检查片段，选择区间并核对中央窗裁切。也可换用其他检索方式，取得本地文件与来源记录后继续选镜。
+工具按竖屏筛选候选，下载 MP4，抽取 1 秒处图片，记录来源页面、作者、素材编号和许可页。候选不会自动写入镜头表；采用前完整检查片段，选择区间并核对中央窗裁切，以及人物、场景与画面文字是否符合中文内容语境，不匹配就弃用。也可换用其他检索方式，取得本地文件与来源记录后继续选镜。
