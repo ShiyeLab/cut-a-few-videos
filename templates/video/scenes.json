@@ -4,7 +4,7 @@
     "asset": "projects/my-video/assets/cover.png",
     "fit": "blur",
     "move": "push",
-    "reason": "首镜示例：填写与当前口播匹配的真实画面"
+    "reason": "示例位置：填写实际可见内容、开头承担的作用与采用依据；首镜按本条表达选择"
   },
   {
     "anchor": "替换成实际字幕条的唯一句首",
@@ -12,6 +12,6 @@
     "in": 0,
     "fit": "cover",
     "transition": "push_left",
-    "reason": "填写实际看过的动作、源区间、采用理由与转场选择"
+    "reason": "填写所选区间的实际画面、对应口播或作用、裁后仍适合采用的理由；转场按衔接需要选择"
   }
 ]

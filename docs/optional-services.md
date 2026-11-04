@@ -52,7 +52,7 @@ python tools/seedream_image.py --prompt projects/my-video/poster-prompt.txt \
 
 结果保存为 `poster-v1/poster.png`，同时保存请求正文与状态回执。把该图片路径填入 `band_art`，由同一张海报裁出上下条带。底图不得带文字、印章、logo 或边框；修改标题只需重新排字。
 
-同一工具也用来生成空镜静帧：`--size` 设为方形（如 `2048x2048`），每张用新的结果目录，图片作为镜头素材写入 `scenes.json`，由 `move` 提供运镜。
+同一工具也用来生成补充静帧：默认近方形中央窗可用 `2048x2048`，其他布局按实际显示区域选尺寸。每张用新的结果目录，图片作为镜头素材写入 `scenes.json`，按需要设置 `move`，省略则保持静止。
 
 同参数且图片完整时复用结果；提示词或参数改变时使用新目录。请求中断、返回错误或图片无法读取时保留状态，不自动再次提交。Agent 检查回执后，在已授权范围内决定如何继续。
 
@@ -94,9 +94,9 @@ python tools/doubao_tts.py --script projects/my-video/script.txt \
 
 使用 `MINIMAX_API_KEY`，站点为 `https://api.minimaxi.com`，模型为 `MiniMax-H3`。配置须与该站点匹配。
 
-MiniMax 只用于关键镜头。一批成片共用一个空镜池，写在同一个规格文件里，默认整批最多 4 条，同一条最多用在两条成片里；分辨率保持 768P。
+需要生成视频时可使用 MiniMax；是否生成、生成多少以及怎样复用，由镜头作用、可用素材和已授权预算决定。可把本次需要的镜头集中写在一个规格文件里，默认 768P；不按镜头所处位置分配服务或规定固定条数。
 
-Agent 复制[空镜模板](../templates/ai-video.json)，保存到本条目录，用新的 `slug` 标识每个镜头。模板只示范提示词的写法，画面按[制作流程](../methods/制作流程.md#4-选镜头与补画面)的构思与提示词顺序为本条重新设计，不沿用示例内容。`ratio` 保持 `1:1`，与接近方形的中央窗一致，不改成 9:16。新环境镜头默认无手、无书、无文字；是否出现人物按内容决定。
+Agent 复制[空镜模板](../templates/ai-video.json)，保存到本条目录，用新的 `slug` 标识每个镜头。模板只示范写法，按[制作流程](../methods/制作流程.md#4-选镜头与补画面)设计本条实际需要的画面。默认近方形中央窗用 `ratio: 1:1`，其他布局按实际窗口选择工具支持的比例。新环境镜头默认无手、无书、无文字；人物是否入镜按内容决定，不能冒充真实人物、事件或产品使用证据。
 
 ```sh
 python tools/minimax_video.py --spec projects/my-video/ai-video.json --out projects/my-video/ai
@@ -107,15 +107,15 @@ python tools/minimax_video.py --spec projects/my-video/ai-video.json --out proje
 
 每个镜头目录保留提示词、回执、`clip.mp4` 与三张抽帧图。已有 downloaded 结果直接跳过；改变提示词时必须改 slug。超过等待时间后，用相同目录和 `--poll-only` 继续查询。是否完成应看回执的 downloaded 状态与实际文件。
 
-生成后逐条核对抽帧与连续画面，检查禁止内容、真实动作与可用时长，再写入镜头表。
+生成后核对实际内容、情绪、动作与裁后效果，再决定是否采用。预期表达没有实现时调整选段、换素材或弃用；仍有作用的结果更新实际采用理由，不能把请求里的意图直接当作完成结果。
 
 ## Pexels 候选检索
 
-需要补充实拍画面时，可用 `PEXELS_API_KEY` 调用 [Pexels 视频 API](https://www.pexels.com/api/documentation/)。Agent 按[检索需求模板](../templates/stock-brief.json)填写具体的人和动作，不用氛围词检索，保存到本条目录：
+需要补充实拍画面时，可用 `PEXELS_API_KEY` 调用 [Pexels 视频 API](https://www.pexels.com/api/documentation/)。Agent 按[检索需求模板](../templates/stock-brief.json)填写具体主体、动作或场景，保存到本条目录：
 
 ```sh
 python tools/stock_search.py --brief projects/my-video/stock-brief.json \
   --per-shot 2 --out projects/my-video/stock
 ```
 
-工具按竖屏筛选候选，下载 MP4，抽取 1 秒处图片，记录来源页面、作者、素材编号和许可页。候选不会自动写入镜头表；采用前完整检查片段，选择区间并核对中央窗裁切，以及人物、场景与画面文字是否符合中文内容语境，不匹配就弃用。也可换用其他检索方式，取得本地文件与来源记录后继续选镜。
+工具按竖屏筛选候选，下载 MP4，抽取 1 秒处图片，记录来源页面、作者、素材编号和许可页。候选不会自动写入镜头表；采用前完整检查片段，选择区间并核对中央窗裁切，以及人物、场景与画面文字是否符合本条内容设定。缺少检索配置时先评估已有或其他已授权素材能否满足表达，确有缺口再请用户补充。也可换用其他检索方式，取得本地文件与来源记录后继续选镜。
