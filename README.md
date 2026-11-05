@@ -38,7 +38,7 @@ cd cut-a-few-videos
 | 主 Agent | DeepSeek V4.1 Flash | 文案、制作判断、配置与工具执行 |
 | 视频理解 | MediaKit `video-understand-router` | 逐文件内容分析、候选源区间、选用理由与不确定项 |
 | 贴片生图 | Seedream 5.0 Pro | 本地无字海报 PNG/JPG |
-| 环境视频 | MiniMax H3 | 本地视频片段与实际选段 |
+| 补充镜头视频 | MiniMax H3 | 本地视频片段与实际选段 |
 | 配音 | 豆包语音合成 2.0 流式语气方案 | 完整音频与匹配的真实字幕时间轴 |
 | 补充素材 | 用户素材优先，按需检索 | 本地文件、来源与使用区间 |
 
