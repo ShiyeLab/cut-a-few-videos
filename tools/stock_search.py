@@ -51,18 +51,24 @@ def pixabay_search(key: str, query: str, count: int, cache: Path, lang: str = "e
     if path.is_file() and time.time() - path.stat().st_mtime < 86400:
         data = json.loads(path.read_text(encoding="utf-8"))
     else:
-        url = "https://pixabay.com/api/videos/?" + params + "&" + urllib.parse.urlencode({"key": key})
-        data = api_get(urllib.request.Request(url))
+        url = "https://pixabay.com/api/videos/?" + urllib.parse.urlencode({"key": key}) + "&" + params
+        data = api_get(urllib.request.Request(url, headers={
+            "Accept": "application/json", "User-Agent": "cut-a-few-videos/1.0",
+        }))
         if not isinstance(data.get("hits"), list):
             raise ValueError("Pixabay response lacks hits")
         write_json(path, {"hits": data["hits"]})
 
     videos = []
     for hit in data["hits"]:
+        # video_type=film 也会返回平台已标记为 AI 生成的视频。
+        if hit.get("isAiGenerated") is True:
+            continue
         files = [{"file_type": "video/mp4", "link": f["url"], "width": f.get("width"),
                   "height": f.get("height")} for f in hit["videos"].values() if f.get("url")]
         videos.append({"id": hit["id"], "duration": hit["duration"], "url": hit["pageURL"],
-                       "user": {"name": hit["user"]}, "video_files": files})
+                       "user": {"name": hit["user"]}, "video_files": files,
+                       "is_ai_generated": hit.get("isAiGenerated")})
     return videos[:count]
 
 
@@ -174,6 +180,7 @@ def main() -> int:
                 "width": f.get("width"), "height": f.get("height"), "duration": video.get("duration"),
                 "photographer": video["user"].get("name"), "page": video["url"],
                 "license": LICENSES[provider], "requirement": shot.get("requirement"),
+                "is_ai_generated": video.get("is_ai_generated"),
             })
             print(f"  {ident}  {video['url']}")
         write_json(folder / "manifest.json", {"source": provider, "need": shot["need"], "query": query,

@@ -119,6 +119,6 @@ python tools/stock_search.py --provider pixabay --brief projects/my-video/stock-
 
 Pixabay 的相同查询在本地缓存 24 小时。按当前镜头需要搜索，避免批量抓库。每个镜头目录下的 `manifest.json` 记录候选 MP4、预览图、作者、原始页面和许可；向用户展示候选时附来源链接。零命中时调整描述或另行编排。检索和下载故障会返回错误，不能当作库中没有合适画面。
 
-按实际输出窗口查看候选的连续动作与前后镜头，并核对商标、可识别人物与本次使用场景。检索命中后也可以在授权预算内试做一个有明确改善目标的生成版，由 Agent 在同段口播下决定取舍。[Pixabay 素材许可](https://pixabay.com/service/license-summary/) · [选镜流程](../methods/制作流程.md#4-选镜头与补画面)
+工具跳过 Pixabay 明确标为 AI 生成的视频，清单中的 `is_ai_generated` 记录平台标记，空值表示来源未提供该信息。按实际输出窗口查看候选的连续动作与前后镜头，并核对商标、可识别人物与本次使用场景。检索命中后也可以在授权预算内试做一个有明确改善目标的生成版，由 Agent 在同段口播下决定取舍。[Pixabay 素材许可](https://pixabay.com/service/license-summary/) · [选镜流程](../methods/制作流程.md#4-选镜头与补画面)
 
 已有 Pexels 配置可以用同一命令传 `--provider pexels` 和单独的输出目录。旧配置仅含 `PEXELS_API_KEY` 且未声明 Pixabay 字段时，原命令仍使用 Pexels。显式选择的服务缺少 Key 会直接提示。[Pexels 视频 API](https://www.pexels.com/api/documentation/)

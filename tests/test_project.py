@@ -179,17 +179,21 @@ class ProjectTests(unittest.TestCase):
                 {"type": "stock", "need": "street", "query": "街道", "lang": "zh"}]}))
             config = root / "env"
             config.write_text("PIXABAY_API_KEY=MOCK_NOT_A_REAL_KEY\n")
-            hit = {"id": 123, "pageURL": "https://example.invalid/123", "user": "test",
+            hit = {"id": 123, "pageURL": "https://example.invalid/123", "user": "test", "isAiGenerated": False,
                    "duration": 2, "videos": {"small": {
                        "url": source.as_uri(), "width": 64, "height": 64}}}
             argv = ["stock_search.py", "--env", str(config), "--brief", str(brief),
                     "--out", "projects/test", "--per-shot", "1"]
             with patch.object(P, "ROOT", root), patch.object(sys, "argv", argv), \
-                    patch.object(P, "api_get", return_value={"hits": [hit, hit, hit]}) as search:
+                    patch.object(P, "api_get", return_value={"hits": [dict(hit, id=124, isAiGenerated=True),
+                                                                      hit]}) as search:
                 self.assertEqual(P.main(), 0)
                 self.assertEqual(P.main(), 0)
                 search.assert_called_once()
-                url = P.urllib.parse.urlparse(search.call_args.args[0].full_url)
+                request = search.call_args.args[0]
+                self.assertEqual(request.get_header("Accept"), "application/json")
+                self.assertEqual(request.get_header("User-agent"), "cut-a-few-videos/1.0")
+                url = P.urllib.parse.urlparse(request.full_url)
                 self.assertEqual((url.hostname, url.path), ("pixabay.com", "/api/videos/"))
                 params = P.urllib.parse.parse_qs(url.query)
                 self.assertEqual((params["q"], params["lang"], params["per_page"]),
@@ -198,6 +202,8 @@ class ProjectTests(unittest.TestCase):
             items = json.loads((folder / "manifest.json").read_text())["candidates"]
             self.assertEqual(len(items), 1)
             item = items[0]
+            self.assertEqual(item["id"], 123)
+            self.assertIs(item["is_ai_generated"], False)
             self.assertEqual(item["page"], hit["pageURL"])
             self.assertEqual(item["license"], P.LICENSES["pixabay"])
             self.assertEqual((root / item["file"]).read_bytes(), source.read_bytes())
