@@ -21,5 +21,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--env", default=".env.local")
     config = load_env(Path(parser.parse_args().env))
-    for name in ("MEDIAKIT_API_KEY", "VOLCENGINE_TTS_API_KEY", "ARK_IMAGE_API_KEY", "MINIMAX_API_KEY", "PEXELS_API_KEY"):
+    for name in ("MEDIAKIT_API_KEY", "VOLCENGINE_TTS_API_KEY", "ARK_IMAGE_API_KEY", "MINIMAX_API_KEY",
+                 "PIXABAY_API_KEY", "PEXELS_API_KEY"):
         print(name, "PRESENT" if config.get(name) else "ABSENT")

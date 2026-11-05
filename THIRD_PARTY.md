@@ -28,7 +28,7 @@
 
 ## 服务与媒体来源
 
-豆包配音、Seedream、MiniMax 和 Pexels 是外部服务接入，使用方式见[服务选择与替换](docs/optional-services.md)。MediaKit 的开源 CLI 许可也不替代其云端服务条款。Pexels 素材按[素材许可](https://www.pexels.com/license/)记录来源与用途。
+豆包配音、Seedream、MiniMax、Pixabay 和 Pexels 是外部服务接入，使用方式见[服务选择与替换](docs/optional-services.md)。MediaKit 的开源 CLI 许可也不替代其云端服务条款。外部视频按单条记录来源、作者和使用依据。见 [Pixabay 素材许可](https://pixabay.com/service/license-summary/)与 [Pexels 素材许可](https://www.pexels.com/license/)。
 
 本仓库通过依赖安装或外部命令使用上述软件，不附带其源码、二进制、字体包、账户配置或第三方媒体包。教学输入由程序生成几何图形、测试画面与合成音。使用者加入的媒体在 `sources.json` 中记录来源、作者、用途与许可。
 
