@@ -96,7 +96,7 @@ python tools/doubao_tts.py --script projects/my-video/script.txt \
 
 需要生成视频时可使用 MiniMax；是否生成、生成多少以及怎样复用，由镜头作用、可用素材和已授权预算决定。可把本次需要的镜头集中写在一个规格文件里，默认 768P；不按镜头所处位置分配服务或规定固定条数。
 
-Agent 复制[空镜模板](../templates/ai-video.json)，保存到本条目录，用新的 `slug` 标识每个镜头。模板只示范写法，按[制作流程](../methods/制作流程.md#4-选镜头与补画面)设计本条实际需要的画面。默认近方形中央窗用 `ratio: 1:1`，其他布局按实际窗口选择工具支持的比例。新环境镜头默认无手、无书、无文字；人物是否入镜按内容决定，不能冒充真实人物、事件或产品使用证据。
+Agent 复制[空镜模板](../templates/ai-video.json)，保存到本条目录，用新的 `slug` 标识每个镜头。模板只示范写法：第一条是故事人物镜头，第二条是点缀用的隐喻；按[制作流程](../methods/制作流程.md#4-选镜头与补画面)设计本条实际需要的画面。默认近方形中央窗用 `ratio: 1:1`，其他布局按实际窗口选择工具支持的比例。新环境镜头默认无手、无书、无文字；人物是否入镜按内容决定，不能冒充真实人物、事件或产品使用证据。
 
 ```sh
 python tools/minimax_video.py --spec projects/my-video/ai-video.json --out projects/my-video/ai
