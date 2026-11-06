@@ -1,6 +1,8 @@
 """通用输入与声音组合的离线行为检查。"""
 import argparse
 import copy
+from contextlib import redirect_stderr
+from io import StringIO
 import json
 import os
 from pathlib import Path
@@ -165,6 +167,66 @@ class ProjectTests(unittest.TestCase):
             with patch.object(sys, "argv", argv), patch.object(P, "api_get") as search:
                 self.assertEqual(P.main(), 2)
                 search.assert_not_called()
+
+    def test_pixabay_search_download_and_cache(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            source = root / "sample.mp4"
+            C.run(["ffmpeg", "-v", "error", "-f", "lavfi", "-i", "color=s=64x64:d=2",
+                   "-c:v", "libx264", str(source)], "生成测试视频")
+            brief = root / "brief.json"
+            brief.write_text(json.dumps({"shots": [
+                {"type": "stock", "need": "street", "query": "街道", "lang": "zh"}]}))
+            config = root / "env"
+            config.write_text("PIXABAY_API_KEY=MOCK_NOT_A_REAL_KEY\n")
+            hit = {"id": 123, "pageURL": "https://example.invalid/123", "user": "test", "isAiGenerated": False,
+                   "duration": 2, "videos": {"small": {
+                       "url": source.as_uri(), "width": 64, "height": 64}}}
+            argv = ["stock_search.py", "--env", str(config), "--brief", str(brief),
+                    "--out", "projects/test", "--per-shot", "1"]
+            with patch.object(P, "ROOT", root), patch.object(sys, "argv", argv), \
+                    patch.object(P, "api_get", return_value={"hits": [dict(hit, id=124, isAiGenerated=True),
+                                                                      hit]}) as search:
+                self.assertEqual(P.main(), 0)
+                self.assertEqual(P.main(), 0)
+                search.assert_called_once()
+                request = search.call_args.args[0]
+                self.assertEqual(request.get_header("Accept"), "application/json")
+                self.assertEqual(request.get_header("User-agent"), "cut-a-few-videos/1.0")
+                url = P.urllib.parse.urlparse(request.full_url)
+                self.assertEqual((url.hostname, url.path), ("pixabay.com", "/api/videos/"))
+                params = P.urllib.parse.parse_qs(url.query)
+                self.assertEqual((params["q"], params["lang"], params["per_page"]),
+                                 (["街道"], ["zh"], ["3"]))
+            folder = root / "projects/test/street"
+            items = json.loads((folder / "manifest.json").read_text())["candidates"]
+            self.assertEqual(len(items), 1)
+            item = items[0]
+            self.assertEqual(item["id"], 123)
+            self.assertIs(item["is_ai_generated"], False)
+            self.assertEqual(item["page"], hit["pageURL"])
+            self.assertEqual(item["license"], P.LICENSES["pixabay"])
+            self.assertEqual((root / item["file"]).read_bytes(), source.read_bytes())
+            self.assertTrue((root / item["still"]).is_file())
+            for record in root.rglob("*.json"):
+                self.assertNotIn("MOCK_NOT_A_REAL_KEY", record.read_text())
+
+    def test_pixabay_http_error_keeps_key_out_of_diagnostics(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / "env").write_text("PIXABAY_API_KEY=MOCK_NOT_A_REAL_KEY\n")
+            (root / "brief").write_text(json.dumps({"shots": [
+                {"type": "stock", "need": "walk", "query": "walking"}]}))
+            argv = ["stock_search.py", "--provider", "pixabay", "--env", str(root / "env"),
+                    "--brief", str(root / "brief")]
+            err = urllib.error.HTTPError("https://example.invalid/?key=MOCK_NOT_A_REAL_KEY",
+                                         429, "limit", {}, None)
+            log = StringIO()
+            with patch.object(P, "ROOT", root), patch.object(sys, "argv", argv), \
+                    patch.object(P, "api_get", side_effect=err), redirect_stderr(log):
+                self.assertEqual(P.main(), 1)
+            self.assertIn("429", log.getvalue())
+            self.assertNotIn("MOCK_NOT_A_REAL_KEY", log.getvalue())
 
     def test_four_audio_combinations_have_full_length(self):
         with tempfile.TemporaryDirectory() as temp:

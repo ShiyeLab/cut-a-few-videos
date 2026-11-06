@@ -109,13 +109,16 @@ python tools/minimax_video.py --spec projects/my-video/ai-video.json --out proje
 
 生成后核对实际内容、情绪、动作与裁后效果，再决定是否采用。预期表达没有实现时调整选段、换素材或弃用；仍有作用的结果更新实际采用理由，不能把请求里的意图直接当作完成结果。
 
-## Pexels 候选检索
+## 免费商用实拍检索
 
-需要补充实拍画面时，可用 `PEXELS_API_KEY` 调用 [Pexels 视频 API](https://www.pexels.com/api/documentation/)。Agent 按[检索需求模板](../templates/stock-brief.json)填写具体主体、动作或场景，保存到本条目录：
+默认推荐 Pixabay。Agent 按镜头的实际需要制定查询，从[检索模板](../templates/stock-brief.json)填写具体主体、动作和场景，再少量下载、逐条判断。将自己的 `PIXABAY_API_KEY` 填入本项目的 `.env.local`。查询默认使用英文，中文词可给对应镜头加 `"lang": "zh"`。[Pixabay 官方视频 API 与 Key 入口](https://pixabay.com/api/docs/)
 
 ```sh
-python tools/stock_search.py --brief projects/my-video/stock-brief.json \
-  --per-shot 2 --out projects/my-video/stock
+python tools/stock_search.py --provider pixabay --brief projects/my-video/stock-brief.json --per-shot 2 --out projects/my-video/stock-pixabay
 ```
 
-工具按竖屏筛选候选，下载 MP4，抽取 1 秒处图片，记录来源页面、作者、素材编号和许可页。候选不会自动写入镜头表；采用前完整检查片段，选择区间并核对中央窗裁切，以及人物、场景与画面文字是否符合本条内容设定。缺少检索配置时先评估已有或其他已授权素材能否满足表达，确有缺口再请用户补充。也可换用其他检索方式，取得本地文件与来源记录后继续选镜。
+Pixabay 的相同查询在本地缓存 24 小时。按当前镜头需要搜索，避免批量抓库。每个镜头目录下的 `manifest.json` 记录候选 MP4、预览图、作者、原始页面和许可；向用户展示候选时附来源链接。零命中时调整描述或另行编排。检索和下载故障会返回错误，不能当作库中没有合适画面。
+
+工具跳过 Pixabay 明确标为 AI 生成的视频，清单中的 `is_ai_generated` 记录平台标记，空值表示来源未提供该信息。按实际输出窗口查看候选的连续动作与前后镜头，并核对商标、可识别人物与本次使用场景。检索命中后也可以在授权预算内试做一个有明确改善目标的生成版，由 Agent 在同段口播下决定取舍。[Pixabay 素材许可](https://pixabay.com/service/license-summary/) · [选镜流程](../methods/制作流程.md#4-选镜头与补画面)
+
+已有 Pexels 配置可以用同一命令传 `--provider pexels` 和单独的输出目录。旧配置仅含 `PEXELS_API_KEY` 且未声明 Pixabay 字段时，原命令仍使用 Pexels。显式选择的服务缺少 Key 会直接提示。[Pexels 视频 API](https://www.pexels.com/api/documentation/)
